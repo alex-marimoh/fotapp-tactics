@@ -1,5 +1,5 @@
 import React from 'react';
-import { KitShirt, Stars, Flag, SQUAD, DEMOGRAPHICS, LOANS, NEWS, DEPTH_CHART } from './shared';
+import { KitShirt, Stars, Flag, SQUAD, DEMOGRAPHICS, LOANS, NEWS, DEPTH_CHARTS as DEPTH_CHART } from './shared';
 
 const A = {
   bg: '#0d1014', surface: '#141a21', surface2: '#1a2129',

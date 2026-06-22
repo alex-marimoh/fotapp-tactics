@@ -1,5 +1,5 @@
 import React from 'react';
-import { Stars, Flag, SQUAD, DEMOGRAPHICS, LOANS, NEWS, DEPTH_CHART } from './shared';
+import { Stars, Flag, SQUAD, DEMOGRAPHICS, LOANS, NEWS, DEPTH_CHARTS as DEPTH_CHART } from './shared';
 
 const B = {
   paper:     '#f4ede0',
