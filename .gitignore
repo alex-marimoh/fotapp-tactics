@@ -17,6 +17,9 @@ dist-ssr
 !.vscode/extensions.json
 .idea
 .DS_Store
+# macOS AppleDouble files (created on non-HFS volumes)
+._*
+.claude/settings.local.json
 *.suo
 *.ntvs*
 *.njsproj

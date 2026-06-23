@@ -1,6 +1,6 @@
 import React from 'react';
-import { TelemetryBoard } from './c-telemetry';
+import { TacticsBoard } from './board';
 
 export default function App() {
-  return <TelemetryBoard />;
+  return <TacticsBoard />;
 }
