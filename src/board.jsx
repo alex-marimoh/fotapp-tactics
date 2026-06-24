@@ -570,6 +570,7 @@ function RosterTable({ roster }) {
   const [q, setQ] = React.useState('');
   const [grp, setGrp] = React.useState('all');
   const [reg, setReg] = React.useState('all');
+  const [showFilters, setShowFilters] = React.useState(false);
   const order = Object.fromEntries(POSITION_TYPES.map((t, i) => [t, i]));
   const rows = [...roster]
     .sort((a, b) => (order[a.pos[0]] - order[b.pos[0]]) || (b.rating - a.rating))
@@ -592,21 +593,42 @@ function RosterTable({ roster }) {
   const row = { display: 'flex', gap: 5, alignItems: 'center', flexWrap: 'wrap' };
   const tag = { fontSize: 10, opacity: 0.45, width: 26, flexShrink: 0 };
 
+  const active = (q.trim() ? 1 : 0) + (grp !== 'all' ? 1 : 0) + (reg !== 'all' ? 1 : 0);
+  const clear = () => { setQ(''); setGrp('all'); setReg('all'); };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search players…" style={field} />
-      <div style={row}>
-        <span style={tag}>Pos</span>
-        {[['all', 'All'], ['GK', 'GK'], ['DEF', 'DEF'], ['MID', 'MID'], ['ATT', 'ATT']].map(([k, l]) => (
-          <Chip key={k} active={grp === k} onClick={() => setGrp(k)}>{l}</Chip>
-        ))}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <button onClick={() => setShowFilters((s) => !s)}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: T.pill,
+            cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 800, background: T.soft, color: T.text,
+            border: `1px solid ${showFilters || active ? T.accent : T.hair2}` }}>
+          Filters{active ? ` · ${active}` : ''} <span style={{ fontSize: 10 }}>{showFilters ? '▴' : '▾'}</span>
+        </button>
+        {active > 0 && (
+          <button onClick={clear} style={{ background: 'transparent', border: 'none', cursor: 'pointer',
+            fontFamily: 'inherit', fontSize: 12, fontWeight: 700, color: T.accent }}>Clear</button>
+        )}
+        {active > 0 && <span style={{ marginLeft: 'auto', fontSize: 11, opacity: 0.5 }}>{rows.length} of {roster.length}</span>}
       </div>
-      <div style={row}>
-        <span style={tag}>Reg</span>
-        {[['all', 'All'], ['home', 'HG'], ['eu', 'EU'], ['noneu', 'Non-EU']].map(([k, l]) => (
-          <Chip key={k} active={reg === k} onClick={() => setReg(k)}>{l}</Chip>
-        ))}
-      </div>
+
+      {showFilters && (
+        <>
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search players…" style={field} />
+          <div style={row}>
+            <span style={tag}>Pos</span>
+            {[['all', 'All'], ['GK', 'GK'], ['DEF', 'DEF'], ['MID', 'MID'], ['ATT', 'ATT']].map(([k, l]) => (
+              <Chip key={k} active={grp === k} onClick={() => setGrp(k)}>{l}</Chip>
+            ))}
+          </div>
+          <div style={row}>
+            <span style={tag}>Reg</span>
+            {[['all', 'All'], ['home', 'HG'], ['eu', 'EU'], ['noneu', 'Non-EU']].map(([k, l]) => (
+              <Chip key={k} active={reg === k} onClick={() => setReg(k)}>{l}</Chip>
+            ))}
+          </div>
+        </>
+      )}
 
       {rows.length ? (
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
