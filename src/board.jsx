@@ -83,6 +83,7 @@ export function TacticsBoard({ skin = DEFAULT_SKIN }) {
   const [adding, setAdding] = React.useState(null); // slot id being added to
   const [addTab, setAddTab] = React.useState('roster');
   const [form, setForm] = React.useState({ name: '', type: 'CB', reg: 'eu', age: '21', rating: '3' });
+  const [infoView, setInfoView] = React.useState('news'); // 'news' | 'roster'
 
   const allByNum = React.useMemo(() => Object.fromEntries(roster.map((p) => [p.num, p])), [roster]);
   const slots = FORMATIONS[formation];
@@ -247,29 +248,43 @@ export function TacticsBoard({ skin = DEFAULT_SKIN }) {
           <InfoLegend />
         </div>
 
-        {/* info half (PLACEHOLDER — news / whatever) */}
+        {/* info half — News / Roster views */}
         <div style={{ background: T.panel, padding: '16px 20px', overflowY: 'auto',
           display: 'flex', flexDirection: 'column', gap: 12, minHeight: 0, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 14, fontWeight: 800, fontFamily: T.display }}>Team news</span>
-            <span style={{ fontSize: 10, fontWeight: 700, color: T.accent2,
-              border: `1px solid ${T.accent2}`, borderRadius: T.pill, padding: '1px 7px' }}>PLACEHOLDER</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+            {[['news', 'Team news'], ['roster', 'Roster']].map(([k, l]) => (
+              <button key={k} onClick={() => setInfoView(k)}
+                style={{ padding: '6px 13px', borderRadius: T.pill, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                  fontSize: 12, fontWeight: 800, background: infoView === k ? T.accent : T.soft,
+                  color: infoView === k ? T.onAccent : T.text }}>{l}</button>
+            ))}
+            {infoView === 'news'
+              ? <span style={{ fontSize: 10, fontWeight: 700, color: T.accent2, marginLeft: 6,
+                  border: `1px solid ${T.accent2}`, borderRadius: T.pill, padding: '1px 7px' }}>PLACEHOLDER</span>
+              : <span style={{ marginLeft: 'auto', fontSize: 11, opacity: 0.5 }}>{roster.length} players</span>}
           </div>
-          {PLACEHOLDER_NEWS.map((n, i) => (
-            <div key={i} style={{ background: T.soft, border: `1px solid ${T.hair}`,
-              borderRadius: T.radius, padding: '12px 14px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
-                <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: '0.06em', padding: '2px 7px',
-                  borderRadius: T.pill, background: `${n.c}22`, color: n.c }}>{n.tag}</span>
-                <span style={{ fontSize: 10, opacity: 0.45, marginLeft: 'auto' }}>{n.when}</span>
+
+          {infoView === 'news' ? (
+            <>
+              {PLACEHOLDER_NEWS.map((n, i) => (
+                <div key={i} style={{ background: T.soft, border: `1px solid ${T.hair}`,
+                  borderRadius: T.radius, padding: '12px 14px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+                    <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: '0.06em', padding: '2px 7px',
+                      borderRadius: T.pill, background: `${n.c}22`, color: n.c }}>{n.tag}</span>
+                    <span style={{ fontSize: 10, opacity: 0.45, marginLeft: 'auto' }}>{n.when}</span>
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.3 }}>{n.head}</div>
+                  <div style={{ fontSize: 12, opacity: 0.6, marginTop: 3, lineHeight: 1.4 }}>{n.body}</div>
+                </div>
+              ))}
+              <div style={{ marginTop: 'auto', fontSize: 11, opacity: 0.4, lineHeight: 1.5 }}>
+                Placeholder panel — swap for news feed, rumors, fixtures, or finances later.
               </div>
-              <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.3 }}>{n.head}</div>
-              <div style={{ fontSize: 12, opacity: 0.6, marginTop: 3, lineHeight: 1.4 }}>{n.body}</div>
-            </div>
-          ))}
-          <div style={{ marginTop: 'auto', fontSize: 11, opacity: 0.4, lineHeight: 1.5 }}>
-            Placeholder panel — swap for news feed, rumors, fixtures, or finances later.
-          </div>
+            </>
+          ) : (
+            <RosterTable roster={roster} />
+          )}
         </div>
       </div>
 
@@ -544,6 +559,86 @@ function InfoLegend() {
           background: T.surface, color: T.accent, border: `1px solid ${T.hair2}`,
           fontSize: 17, fontWeight: 700, fontStyle: 'italic', display: 'grid', placeItems: 'center',
           boxShadow: '0 2px 8px rgba(0,0,0,.18)' }}>i</button>
+    </div>
+  );
+}
+
+const POS_GROUP = { GK: 'GK', RB: 'DEF', CB: 'DEF', LB: 'DEF', DM: 'MID', CM: 'MID', AM: 'MID', RW: 'ATT', LW: 'ATT', ST: 'ATT' };
+
+function RosterTable({ roster }) {
+  const T = useT();
+  const [q, setQ] = React.useState('');
+  const [grp, setGrp] = React.useState('all');
+  const [reg, setReg] = React.useState('all');
+  const order = Object.fromEntries(POSITION_TYPES.map((t, i) => [t, i]));
+  const rows = [...roster]
+    .sort((a, b) => (order[a.pos[0]] - order[b.pos[0]]) || (b.rating - a.rating))
+    .filter((p) =>
+      (grp === 'all' || POS_GROUP[p.pos[0]] === grp) &&
+      (reg === 'all' || p.reg === reg) &&
+      (q.trim() === '' || p.name.toLowerCase().includes(q.trim().toLowerCase())));
+  const regLabel = { home: 'HG', eu: 'EU', noneu: 'Non-EU' };
+  const regColor = { home: T.solid, eu: T.text, noneu: T.accent2 };
+  const th = { textAlign: 'left', fontSize: 10, fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase',
+    opacity: 0.5, padding: '7px 8px', position: 'sticky', top: 0, background: T.panel };
+  const td = { fontSize: 12, padding: '8px', borderTop: `1px solid ${T.hair}`, whiteSpace: 'nowrap' };
+  const field = { background: T.soft, border: `1px solid ${T.hair2}`, color: T.text, fontFamily: 'inherit',
+    borderRadius: Math.max(0, T.radius - 4), padding: '7px 10px', fontSize: 12, width: '100%', boxSizing: 'border-box' };
+  const Chip = ({ active, onClick, children }) => (
+    <button onClick={onClick} style={{ padding: '4px 10px', borderRadius: T.pill, cursor: 'pointer', fontFamily: 'inherit',
+      fontSize: 11, fontWeight: 700, border: `1px solid ${active ? T.accent : T.hair2}`,
+      background: active ? T.accent : 'transparent', color: active ? T.onAccent : T.text }}>{children}</button>
+  );
+  const row = { display: 'flex', gap: 5, alignItems: 'center', flexWrap: 'wrap' };
+  const tag = { fontSize: 10, opacity: 0.45, width: 26, flexShrink: 0 };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search players…" style={field} />
+      <div style={row}>
+        <span style={tag}>Pos</span>
+        {[['all', 'All'], ['GK', 'GK'], ['DEF', 'DEF'], ['MID', 'MID'], ['ATT', 'ATT']].map(([k, l]) => (
+          <Chip key={k} active={grp === k} onClick={() => setGrp(k)}>{l}</Chip>
+        ))}
+      </div>
+      <div style={row}>
+        <span style={tag}>Reg</span>
+        {[['all', 'All'], ['home', 'HG'], ['eu', 'EU'], ['noneu', 'Non-EU']].map(([k, l]) => (
+          <Chip key={k} active={reg === k} onClick={() => setReg(k)}>{l}</Chip>
+        ))}
+      </div>
+
+      {rows.length ? (
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              <th style={{ ...th, width: 26 }}>#</th>
+              <th style={th}>Name</th>
+              <th style={th}>Pos</th>
+              <th style={{ ...th, textAlign: 'center' }}>Age</th>
+              <th style={{ ...th, textAlign: 'center' }}>★</th>
+              <th style={{ ...th, textAlign: 'right' }}>Reg</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((p) => (
+              <tr key={p.num}>
+                <td style={{ ...td, opacity: 0.5 }}>{p.num}</td>
+                <td style={{ ...td, fontWeight: 700 }}>{p.name}</td>
+                <td style={{ ...td, opacity: 0.85 }}>{p.pos.join('/')}</td>
+                <td style={{ ...td, textAlign: 'center' }}>{p.age}</td>
+                <td style={{ ...td, textAlign: 'center' }}>{p.rating}</td>
+                <td style={{ ...td, textAlign: 'right' }}>
+                  <span style={{ fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: T.pill,
+                    background: T.soft, color: regColor[p.reg] }}>{regLabel[p.reg]}</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <div style={{ opacity: 0.5, fontSize: 13, padding: '16px 4px', textAlign: 'center' }}>No players match.</div>
+      )}
     </div>
   );
 }
