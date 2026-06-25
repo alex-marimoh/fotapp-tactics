@@ -28,6 +28,12 @@ and watch each position's **depth health** (Solid / Thin / Gap) and **registrati
 | [0011](adr/0011-clean-slate-from-telemetry-engine.md) | Clean slate: rebuild from variant C's engine |
 | [0012](adr/0012-design-direction-field-hero.md) | Chosen look: Field hero (pitch \| info split) |
 
+## Design
+
+[design-spec.md](design-spec.md) — the **Matchday** skin's guidelines: color and type tokens,
+the type scale, layout, component rules, voice, and don'ts. The ADRs say *why*; the spec says
+*how it looks and how to extend it*.
+
 ## Deferred
 
 See [backlog.md](backlog.md) for explicitly post-v1 ideas (news aggregator, real data, club
