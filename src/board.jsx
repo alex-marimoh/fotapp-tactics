@@ -6,24 +6,25 @@ import {
 
 // Full skin schema — colors PLUS style tokens (font, radius, glow, flat, borders).
 // The layout never changes; a skin only swaps these values. Override per render
-// with the `skin` prop. DEFAULT_SKIN is the chosen "Enterprise / SaaS blue" look:
-// light corporate surfaces, blue accent, neutral grays, flat (no gradient/glow).
+// with the `skin` prop. DEFAULT_SKIN is the "Matchday" look: live TV-broadcast
+// graphics — rich saturated grass, crisp white lines, electric blue + broadcast
+// orange, Oswald condensed headlines.
 export const DEFAULT_SKIN = {
-  bg: '#f5f7fa', panel: '#ffffff', text: '#1f2937', surface: '#ffffff',
-  accent: '#2563eb', accentDark: '#1d4ed8', accent2: '#7c3aed', onAccent: '#ffffff',
-  solid: '#16a34a', thin: '#d97706', gap: '#dc2626', oop: '#8b5cf6',
-  pitch: ['#dcebe1', '#cfe3d6', '#c3dccb'],
-  ribbon: ['#ffffff', '#f5f7fa'],
-  cardFrom: '#ffffff', cardTo: '#f8fafc',
+  bg: '#eef2f6', panel: '#ffffff', text: '#141a22', surface: '#ffffff',
+  accent: '#1463ff', accentDark: '#0b49c9', accent2: '#ff5a1f', onAccent: '#ffffff',
+  solid: '#1ba24e', thin: '#e08a16', gap: '#e23b34', oop: '#7c3aed',
+  pitch: ['#3aa056', '#2f9249', '#27823f'],
+  ribbon: ['#ffffff', '#eef3f8'],
+  cardFrom: '#ffffff', cardTo: '#eef3f8',
   // style tokens
-  font: '"Inter", -apple-system, system-ui, sans-serif',
-  display: '"Inter", -apple-system, system-ui, sans-serif',
-  radius: 8, pill: 6,
-  glow: false, flat: true,
-  line: 'rgba(31,41,55,.30)',
-  hair: 'rgba(15,23,42,.10)',
-  hair2: 'rgba(15,23,42,.16)',
-  soft: 'rgba(15,23,42,.03)',
+  font: '"DM Sans", -apple-system, system-ui, sans-serif',
+  display: '"Oswald", "DM Sans", system-ui, sans-serif',
+  radius: 10, pill: 8,
+  glow: false, flat: false,
+  line: 'rgba(255,255,255,.85)',
+  hair: 'rgba(12,22,40,.10)',
+  hair2: 'rgba(12,22,40,.18)',
+  soft: 'rgba(12,22,40,.045)',
 };
 
 const ThemeContext = React.createContext(DEFAULT_SKIN);
@@ -157,9 +158,9 @@ export function TacticsBoard({ skin = DEFAULT_SKIN }) {
       <div style={{ height: 56, display: 'flex', alignItems: 'center', gap: 12, padding: '0 26px',
         background: T.flat ? T.ribbon[0] : `linear-gradient(90deg,${T.ribbon[0]},${T.ribbon[1]})`,
         borderBottom: `1px solid ${T.hair}`, flexShrink: 0 }}>
-        <span style={{ fontWeight: 850, fontSize: 18, letterSpacing: '-0.02em', fontFamily: T.display,
-          background: `linear-gradient(90deg,${T.accent},${T.accent2})`, WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent' }}>fotapp</span>
+        <span style={{ fontWeight: 850, fontSize: 19, letterSpacing: '-0.02em', fontFamily: T.display }}>
+          <span style={{ color: T.accent }}>fot</span><span style={{ color: T.accent2 }}>app</span>
+        </span>
         <span style={{ fontSize: 13, opacity: 0.55, fontWeight: 600 }}>Build your season</span>
       </div>
 
