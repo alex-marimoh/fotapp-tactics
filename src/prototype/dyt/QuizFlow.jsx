@@ -1,26 +1,19 @@
 /*
- * "Squad quiz": swipe-deck keep/sell flow as intro → play → result.
+ * "Squad quiz": deck keep/drop flow as intro → play → result.
  * Reachable from the board via ?quiz=squad.
  */
 import React from 'react';
 import { DEFAULT_SKIN } from '../../board';
 import { SwipeDeck } from './SwipeDeck';
-import { createQuizModel, archetypeOf, fmtM } from './data';
+import { createQuizModel, archetypeOf, fmtM, fmtSalaryYear } from './data';
 import { getTeam, DEFAULT_TEAM_SLUG, saveQuizResult, listQuizResults } from '../../data/store';
+import { decidedCount } from './quiz-shared';
 
 // ---- shared bits ----------------------------------------------------------
 function Wordmark({ T }) {
   return (
     <span style={{ fontWeight: 850, fontSize: 19, letterSpacing: '-.02em', fontFamily: T.display }}>
       <span style={{ color: T.accent }}>fot</span><span style={{ color: T.accent2 }}>app</span>
-    </span>
-  );
-}
-function Chip({ T, label, value, color }) {
-  return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 11px', borderRadius: T.pill, background: T.soft, border: `1px solid ${T.hair2}` }}>
-      <span style={{ fontSize: 10, opacity: 0.6 }}>{label}</span>
-      <b style={{ fontSize: 12, color }}>{value}</b>
     </span>
   );
 }
@@ -42,16 +35,16 @@ function Intro({ T, total, onStart, last }) {
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20, padding: 24, textAlign: 'center' }}>
       <span style={{ fontFamily: T.display, fontSize: 13, fontWeight: 700, letterSpacing: '.18em', textTransform: 'uppercase', color: T.accent }}>The squad quiz</span>
-      <h1 style={{ margin: 0, fontFamily: T.display, fontSize: 'clamp(40px,7vw,72px)', fontWeight: 800, letterSpacing: '-.02em', lineHeight: 1 }}>Keep or sell?</h1>
-      <p style={{ margin: 0, maxWidth: 520, fontSize: 16, lineHeight: 1.5, opacity: 0.7 }}>
-        You're the sporting director. Go through all {total} players one at a time —
-        <b style={{ opacity: 1 }}> up to keep, down to sell</b>. We'll tally your war chest
-        and the gaps you leave behind.
+      <h1 style={{ margin: 0, fontFamily: T.display, fontSize: 'clamp(40px,7vw,72px)', fontWeight: 800, letterSpacing: '-.02em', lineHeight: 1 }}>Keep or drop?</h1>
+      <p style={{ margin: 0, maxWidth: 480, fontSize: 16, lineHeight: 1.5, opacity: 0.7 }}>
+        One player at a time — their name and your call.
+        <b style={{ opacity: 1 }}> Keep or drop</b>; expiring deals are
+        <b style={{ opacity: 1 }}> renew or release</b>.
       </p>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center', marginTop: 4 }}>
         {step(`${total}`, T.accent, 'players')}
         {step('↑', T.solid, 'Keep')}
-        {step('↓', T.gap, 'Sell')}
+        {step('↓', T.gap, 'Drop')}
       </div>
       <button onClick={onStart} style={{ ...primaryBtn(T), marginTop: 8, padding: '15px 34px', fontSize: 16 }}>Start the quiz →</button>
       {last && (
@@ -64,26 +57,29 @@ function Intro({ T, total, onStart, last }) {
 }
 
 // ===========================================================================
-// Play — the swipe deck (variant A), with a finish bar
+// Play — deck
 // ===========================================================================
 function Play({ T, model, decisions, decide, idx, setIdx, summary, onFinish }) {
   const done = summary.decided === summary.total;
-  const started = summary.decided > 0;
+  const started = decidedCount(decisions) > 0;
+
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ flex: 1, minHeight: 0 }}>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
         <SwipeDeck T={T} model={model} decisions={decisions} decide={decide} idx={idx} setIdx={setIdx} />
       </div>
-      {started && (
-        <div style={{ flexShrink: 0, padding: '12px 16px', borderTop: `1px solid ${T.hair}`, display: 'flex', justifyContent: 'center', background: T.bg }}>
-          {done ? (
-            <button onClick={onFinish} style={{ ...primaryBtn(T), padding: '12px 28px', fontSize: 14 }}>See your result →</button>
-          ) : (
-            <button onClick={onFinish} style={{ padding: '10px 18px', borderRadius: T.pill, border: `1px solid ${T.hair2}`, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 12, color: T.text, background: T.soft }}>
-              End early — see result ({summary.decided}/{summary.total}) ›
-            </button>
-          )}
+      {done && (
+        <div style={{ position: 'absolute', bottom: 24, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 20 }}>
+          <button type="button" onClick={onFinish} style={{ ...primaryBtn(T), padding: '14px 32px', fontSize: 15, boxShadow: '0 12px 40px rgba(20,99,255,.4)' }}>
+            See your result →
+          </button>
         </div>
+      )}
+      {!done && started && (
+        <button type="button" onClick={onFinish}
+          style={{ position: 'absolute', bottom: 16, right: 16, zIndex: 20, border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, color: T.text, opacity: 0.4, textDecoration: 'underline' }}>
+          End early
+        </button>
       )}
     </div>
   );
@@ -103,7 +99,7 @@ function Stat({ T, label, value, color, sub }) {
 }
 function CallRow({ T, call }) {
   const { player, verdict, crowd, crowdPct, agrees } = call;
-  const youColor = verdict === 'keep' ? T.solid : T.gap;
+  const youColor = verdict === 'keep' || verdict === 'renew' ? T.solid : T.gap;
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderTop: `1px solid ${T.hair}` }}>
       <span style={{ flex: 1, fontSize: 14, fontWeight: 700, minWidth: 0 }}>{player.name}
@@ -136,8 +132,8 @@ function Result({ T, model, decisions, summary, onApply, onRestart }) {
         </div>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-          <Stat T={T} label="War chest" value={fmtM(summary.warChest)} color={T.solid} sub={`${summary.wagesFreed}k/wk wages freed`} />
-          <Stat T={T} label="Sold" value={String(summary.sellCount)} sub={`${summary.keepCount} kept`} />
+          <Stat T={T} label="War chest" value={fmtM(summary.warChest)} color={T.solid} sub={`${fmtSalaryYear(summary.wagesFreed)} wages freed`} />
+          <Stat T={T} label="Dropped" value={String(summary.sellCount)} sub={summary.releaseCount ? `${summary.releaseCount} released` : `${summary.keepCount} kept`} />
           <Stat T={T} label="Squad gaps" value={summary.gaps.length ? String(summary.gaps.length) : 'None'} color={summary.gaps.length ? T.gap : T.solid} sub={summary.gaps.length ? summary.gaps.join(' · ') : 'Squad still stands up'} />
         </div>
 
@@ -175,7 +171,6 @@ export function QuizFlow({ team = getTeam(DEFAULT_TEAM_SLUG) }) {
   const restart = () => { setDecisions({}); setIdx(0); setPhase('intro'); };
   const goBoard = () => { window.location.search = `?team=${team.slug}`; };
 
-  // Save the result once when we land on the result screen; keep history per team.
   const savedRef = React.useRef(false);
   React.useEffect(() => {
     if (phase !== 'result') { savedRef.current = false; return; }
@@ -188,7 +183,6 @@ export function QuizFlow({ team = getTeam(DEFAULT_TEAM_SLUG) }) {
     });
   }, [phase, summary, team.slug]);
 
-  // Read the most recent saved result while on the intro screen (after a save it's fresh).
   const lastResult = phase === 'intro' ? listQuizResults(team.slug)[0] || null : null;
 
   return (
@@ -200,14 +194,11 @@ export function QuizFlow({ team = getTeam(DEFAULT_TEAM_SLUG) }) {
         </button>
         <span style={{ fontSize: 13, opacity: 0.55, fontWeight: 600 }}>Squad quiz · {team.name}</span>
         {phase === 'play' && (
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Chip T={T} label="War chest" value={fmtM(summary.warChest)} color={T.solid} />
-            <Chip T={T} label="Sell" value={String(summary.sellCount)} color={T.gap} />
-            <Chip T={T} label="Gaps" value={summary.gaps.length ? summary.gaps.join(' ') : '0'} color={summary.gaps.length ? T.gap : T.text} />
-            <Chip T={T} label="Decided" value={`${summary.decided}/${summary.total}`} color={T.accent} />
-          </div>
+          <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, opacity: 0.45, fontVariantNumeric: 'tabular-nums' }}>
+            {idx + 1} / {summary.total}
+          </span>
         )}
-        <button onClick={goBoard} style={{ marginLeft: phase === 'play' ? 0 : 'auto', padding: '7px 14px', borderRadius: T.pill, border: `1px solid ${T.hair2}`,
+        <button onClick={goBoard} style={{ marginLeft: phase === 'play' ? 12 : 'auto', padding: '7px 14px', borderRadius: T.pill, border: `1px solid ${T.hair2}`,
           cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 12, color: T.text, background: T.soft }}>
           ← Back to board
         </button>
