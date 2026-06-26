@@ -1,14 +1,10 @@
 /*
- * PROTOTYPE — "Squad quiz": variant A (the swipe deck) wrapped as a 3-phase quiz.
- *   intro → play (SwipeDeck) → result
- * The quiz framing turns the solo keep/sell deck into an inviting front door and a
- * shareable payoff: a manager archetype, the war chest / gaps, and a you-vs-crowd
- * compare (previews product feature #4). One shared decision state throughout.
- * Delete this file + the App.jsx branch to remove.
+ * "Squad quiz": swipe-deck keep/sell flow as intro → play → result.
+ * Reachable from the board via ?quiz=squad.
  */
 import React from 'react';
 import { DEFAULT_SKIN } from '../../board';
-import { SwipeDeck } from './variants';
+import { SwipeDeck } from './SwipeDeck';
 import { summaryOf, archetypeOf, crowdCallsOf, fmtM } from './data';
 
 // ---- shared bits ----------------------------------------------------------
@@ -170,13 +166,15 @@ export function QuizFlow() {
   const summary = React.useMemo(() => summaryOf(decisions), [decisions]);
 
   const restart = () => { setDecisions({}); setIdx(0); setPhase('intro'); };
-  const apply = () => { window.location.search = '?board=tactics'; };
+  const goBoard = () => { window.location.search = ''; };
 
   return (
     <div style={{ width: '100%', height: '100vh', background: T.bg, color: T.text, fontFamily: T.font, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div style={{ height: 56, display: 'flex', alignItems: 'center', gap: 12, padding: '0 26px', flexShrink: 0,
         background: T.flat ? T.ribbon[0] : `linear-gradient(90deg,${T.ribbon[0]},${T.ribbon[1]})`, borderBottom: `1px solid ${T.hair}` }}>
-        <Wordmark T={T} />
+        <button onClick={goBoard} style={{ border: 'none', background: 'transparent', padding: 0, cursor: 'pointer' }}>
+          <Wordmark T={T} />
+        </button>
         <span style={{ fontSize: 13, opacity: 0.55, fontWeight: 600 }}>Squad quiz</span>
         {phase === 'play' && (
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -186,12 +184,16 @@ export function QuizFlow() {
             <Chip T={T} label="Decided" value={`${summary.decided}/${summary.total}`} color={T.accent} />
           </div>
         )}
+        <button onClick={goBoard} style={{ marginLeft: phase === 'play' ? 0 : 'auto', padding: '7px 14px', borderRadius: T.pill, border: `1px solid ${T.hair2}`,
+          cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 12, color: T.text, background: T.soft }}>
+          ← Back to board
+        </button>
       </div>
 
       <div style={{ flex: 1, minHeight: 0 }}>
         {phase === 'intro' && <Intro T={T} total={summary.total} onStart={() => { setIdx(0); setPhase('play'); }} />}
         {phase === 'play' && <Play T={T} decisions={decisions} decide={decide} idx={idx} setIdx={setIdx} summary={summary} onFinish={() => setPhase('result')} />}
-        {phase === 'result' && <Result T={T} decisions={decisions} summary={summary} onApply={apply} onRestart={restart} />}
+        {phase === 'result' && <Result T={T} decisions={decisions} summary={summary} onApply={goBoard} onRestart={restart} />}
       </div>
     </div>
   );

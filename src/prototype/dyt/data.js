@@ -1,9 +1,7 @@
 /*
- * PROTOTYPE — "Design Your Team" deck. Delete this folder to remove the prototype.
- *
- * Adds the finance layer the deck needs (market value, wage, contract end) WITHOUT
- * touching the canonical ROSTER — derived deterministically from rating/age/num so the
- * numbers are stable across renders and variants. Everything else (slots, depth, health)
+ * Squad quiz data layer. Adds finance fields (market value, wage, contract end)
+ * derived from the canonical ROSTER without touching squad-data.js.
+ * numbers are stable across renders. Everything else (slots, depth, health)
  * is read straight from the real squad-data module.
  */
 import {

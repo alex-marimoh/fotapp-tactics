@@ -162,6 +162,12 @@ export function TacticsBoard({ skin = DEFAULT_SKIN }) {
           <span style={{ color: T.accent }}>fot</span><span style={{ color: T.accent2 }}>app</span>
         </span>
         <span style={{ fontSize: 13, opacity: 0.55, fontWeight: 600 }}>Build your season</span>
+        <button onClick={() => { window.location.search = '?quiz=squad'; }}
+          style={{ marginLeft: 'auto', padding: '8px 16px', borderRadius: T.pill, border: 'none',
+            background: T.flat ? T.accent : `linear-gradient(90deg,${T.accent},${T.accentDark})`, color: T.onAccent,
+            fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+          Squad quiz →
+        </button>
       </div>
 
       {/* hero: pitch half | info half (pitch widens on wide screens) */}
