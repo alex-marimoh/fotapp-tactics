@@ -88,7 +88,7 @@ export function SwipeDeck({ T, model, decisions, decide, idx, setIdx }) {
   const player = ordered[idx];
   const d = decisions[player.num] || {};
 
-  const [pending, setPending] = React.useState(null); // null | 'drop' | 'renew'
+  const [pending, setPending] = React.useState(null);
   const [tier, setTier] = React.useState('same');
   const [flash, setFlash] = React.useState(null);
   const [exit, setExit] = React.useState(null);
@@ -116,30 +116,19 @@ export function SwipeDeck({ T, model, decisions, decide, idx, setIdx }) {
   }, [player.num, decide, advance, exit]);
 
   const onKeep = () => finish('keep', {}, 'keep', 'keep');
-
   const onDropTap = () => {
     if (exit) return;
     setPending('drop');
     setTier(d.priceTier ?? 'same');
   };
-
   const onRenewTap = () => {
     if (exit) return;
     setPending('renew');
     setTier(d.wageTier ?? 'same');
   };
-
   const onRelease = () => finish('release', {}, 'release', 'sell');
-
-  const confirmDrop = () => {
-    const price = priceForTier(player, tier);
-    finish('sell', { price, priceTier: tier }, 'drop', 'sell');
-  };
-
-  const confirmRenew = () => {
-    const wage = wageForTier(player, tier);
-    finish('renew', { wage, wageTier: tier }, 'renew', 'keep');
-  };
+  const confirmDrop = () => finish('sell', { price: priceForTier(player, tier), priceTier: tier }, 'drop', 'sell');
+  const confirmRenew = () => finish('renew', { wage: wageForTier(player, tier), wageTier: tier }, 'renew', 'keep');
 
   React.useEffect(() => {
     const onKey = (e) => {
@@ -156,13 +145,11 @@ export function SwipeDeck({ T, model, decisions, decide, idx, setIdx }) {
         e.preventDefault();
         if (player.expiring) onRenewTap();
         else onKeep();
-      }
-      else if (e.key === 'ArrowDown') {
+      } else if (e.key === 'ArrowDown') {
         e.preventDefault();
         if (player.expiring) onRelease();
         else onDropTap();
-      }
-      else if (e.key === 'ArrowLeft') { e.preventDefault(); setIdx((i) => Math.max(i - 1, 0)); }
+      } else if (e.key === 'ArrowLeft') { e.preventDefault(); setIdx((i) => Math.max(i - 1, 0)); }
       else if (e.key === 'ArrowRight') { e.preventDefault(); setIdx((i) => Math.min(i + 1, total - 1)); }
     };
     window.addEventListener('keydown', onKey);
@@ -172,7 +159,6 @@ export function SwipeDeck({ T, model, decisions, decide, idx, setIdx }) {
   const exitClass = exit ? `quiz-focus-exit--${exit}` : '';
   const dropAmount = fmtM(priceForTier(player, tier));
   const renewAmount = fmtSalaryYear(wageForTier(player, tier));
-
   const zoneStyle = (color, active) => ({
     flex: 1, border: 'none', cursor: exit ? 'default' : 'pointer', fontFamily: 'inherit',
     fontSize: 12, fontWeight: 800, letterSpacing: '.06em', padding: '11px 0',
@@ -201,10 +187,8 @@ export function SwipeDeck({ T, model, decisions, decide, idx, setIdx }) {
                   )}
                 </div>
               )}
-
               <div style={{ padding: pending ? '20px 18px' : '28px 24px' }}>
                 <DeckPlayerLabel T={T} player={player} />
-
                 {pending === 'drop' && (
                   <TierPicker
                     T={T}
@@ -217,7 +201,6 @@ export function SwipeDeck({ T, model, decisions, decide, idx, setIdx }) {
                     confirmLabel="Confirm drop →"
                   />
                 )}
-
                 {pending === 'renew' && (
                   <TierPicker
                     T={T}
@@ -231,7 +214,6 @@ export function SwipeDeck({ T, model, decisions, decide, idx, setIdx }) {
                   />
                 )}
               </div>
-
               {!pending && (
                 <button
                   type="button"
