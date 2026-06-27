@@ -210,20 +210,27 @@ export function regenerateTeam(slug) {
   if (!club) return rosters[slug] ?? [];
   const fresh = generateRoster(club);
   rosters[slug] = fresh;
-  getSupabase().from('players').delete().eq('team_slug', slug).then(async ({ error }) => {
-    if (error) { console.error(error); return; }
-    const rows = fresh.map((p) => playerToRow(slug, p));
-    const { error: insErr } = await getSupabase().from('players').insert(rows).select('id, num');
-    if (insErr) console.error(insErr);
-    else {
-      const { data } = await getSupabase().from('players').select('id, num').eq('team_slug', slug);
-      for (const row of data ?? []) {
-        const p = rosters[slug].find((x) => x.num === row.num);
-        if (p) p.id = row.id;
-      }
-    }
-  });
+  persistRegenerateTeam(slug, fresh).catch(console.error);
   return rosters[slug];
+}
+
+async function persistRegenerateTeam(slug, fresh) {
+  const supabase = getSupabase();
+  const rows = fresh.map((p) => {
+    const row = playerToRow(slug, p);
+    delete row.team_slug;
+    delete row.id;
+    return row;
+  });
+  const { data, error } = await supabase.rpc('regenerate_team_players', {
+    p_team_slug: slug,
+    p_players: rows,
+  });
+  if (error) throw error;
+  for (const row of data ?? []) {
+    const p = rosters[slug].find((x) => x.num === row.num);
+    if (p) p.id = row.id;
+  }
 }
 
 export function hasRosterEdits(slug) {
