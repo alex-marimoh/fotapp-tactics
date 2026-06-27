@@ -3,12 +3,12 @@
  * Reachable from the board via ?quiz=squad.
  */
 import React from 'react';
-import { DEFAULT_SKIN } from '../../board';
+import { DEFAULT_SKIN } from '../../default-skin';
 import { SwipeDeck } from './SwipeDeck';
 import { createQuizModel, archetypeOf, fmtM, fmtSalaryYear } from './data';
 import { getTeam, DEFAULT_TEAM_SLUG, saveQuizResult, listQuizResults } from '../../data/store';
 import { AccountChip } from '../../auth/AccountChip';
-import { decidedCount } from './quiz-shared';
+import { decidedCount } from './quiz-shared-utils';
 
 // ---- shared bits ----------------------------------------------------------
 function Wordmark({ T }) {

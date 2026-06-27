@@ -3,12 +3,14 @@
  * Question: card stays visible; where does Higher/Same/Lower live?
  */
 import React from 'react';
-import { withA } from './quiz-shared';
-import { DeckChrome, TradingCardView, DeckActionButtons, useDeckKeyboard } from './quiz-deck-ui';
-import { useDeckActions } from './useDeckActions';
-import { PrototypeSwitcher, readPrototypeVariant, setPrototypeVariant } from './PrototypeSwitcher';
+import { withA } from './quiz-shared-utils';
+import { TradingCardView, DeckActionButtons } from './quiz-deck-ui';
+import { KeyedDeckSession } from './deck-session';
+import { PrototypeSwitcher } from './PrototypeSwitcher';
+import { setPrototypeVariant } from './prototype-variant';
+import { RENEW_PROTOTYPE_VARIANTS } from './renew-prototype-variant';
 
-const VARIANTS = ['A', 'B', 'C'];
+const VARIANTS = RENEW_PROTOTYPE_VARIANTS;
 const RENEW_TIER_HINT = {
   more: 'A step above current',
   same: 'Hold the line',
@@ -158,34 +160,12 @@ function firstExpiringIdx(ordered) {
   return i >= 0 ? i : 0;
 }
 
-/**
- * @param {{ T: object, ordered: object[], decisions: object, decide: Function, idx: number, setIdx: Function, variant: string }} props
- */
-export function RenewPrototypeDeck({ T, ordered, decisions, decide, idx, setIdx, variant }) {
-  const deck = useDeckActions({ ordered, decisions, decide, idx, setIdx });
-  useDeckKeyboard(deck, deck.player);
-
-  const [current, setCurrent] = React.useState(() => {
-    const v = variant.toUpperCase();
-    return VARIANTS.includes(v) ? v : 'A';
-  });
-
-  const cycle = React.useCallback((next) => {
-    setCurrent(next);
-    setPrototypeVariant('renewVariant', next);
-  }, []);
-
-  React.useEffect(() => {
-    if (!deck.player.expiring && deck.pending !== 'renew') {
-      setIdx(firstExpiringIdx(ordered));
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps — jump once on mount
-
+function RenewPrototypeBody({ T, deck, current, cycle }) {
   const Renderer = RENDERERS[current] ?? RenewVariantA;
   const showActions = !deck.pending;
 
   return (
-    <DeckChrome T={T} deck={deck}>
+    <>
       <div style={{
         flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
         justifyContent: 'center', padding: '20px 20px 80px', gap: 24,
@@ -208,20 +188,44 @@ export function RenewPrototypeDeck({ T, ordered, decisions, decide, idx, setIdx,
         onCycle={cycle}
         hint="Tap ↻ on an expiring player · card should stay put"
       />
-    </DeckChrome>
+    </>
   );
 }
 
-/** @returns {boolean} */
-export function isRenewPrototypeActive() {
-  const v = readPrototypeVariant('renewVariant');
-  return !!v && VARIANTS.includes(v.toUpperCase());
-}
+/**
+ * @param {{ T: object, ordered: object[], decisions: object, decide: Function, idx: number, setIdx: Function, variant: string }} props
+ */
+export function RenewPrototypeDeck({ T, ordered, decisions, decide, idx, setIdx, variant }) {
+  const [current, setCurrent] = React.useState(() => {
+    const v = variant.toUpperCase();
+    return VARIANTS.includes(v) ? v : 'A';
+  });
 
-/** @returns {string | null} */
-export function getRenewPrototypeVariant() {
-  const v = readPrototypeVariant('renewVariant');
-  if (!v) return null;
-  const up = v.toUpperCase();
-  return VARIANTS.includes(up) ? up : 'A';
+  const cycle = React.useCallback((next) => {
+    setCurrent(next);
+    setPrototypeVariant('renewVariant', next);
+  }, []);
+
+  const didJump = React.useRef(false);
+  React.useEffect(() => {
+    if (didJump.current) return;
+    didJump.current = true;
+    const player = ordered[idx];
+    if (player && !player.expiring) {
+      setIdx(firstExpiringIdx(ordered));
+    }
+  }, [ordered, idx, setIdx]);
+
+  return (
+    <KeyedDeckSession
+      T={T}
+      ordered={ordered}
+      decisions={decisions}
+      decide={decide}
+      idx={idx}
+      setIdx={setIdx}
+    >
+      {(deck) => <RenewPrototypeBody T={T} deck={deck} current={current} cycle={cycle} />}
+    </KeyedDeckSession>
+  );
 }
