@@ -23,7 +23,7 @@ const REG_LABEL = { home: 'Greek (HG)', eu: 'EU', noneu: 'Non-EU' };
 const EMPTY = new Set();
 
 function FieldLabel({ children }) {
-  return <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', opacity: 0.55, marginBottom: 4 }}>{children}</div>;
+  return <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: DEFAULT_SKIN.textMuted, marginBottom: 4 }}>{children}</div>;
 }
 
 function PosChips({ T, values, onToggle }) {
@@ -187,7 +187,7 @@ export function AdminPage({ team }) {
     if (window.confirm('Discard all manual edits and regenerate this squad?')) setRoster(regenerateTeam(team.slug));
   };
 
-  const th = { textAlign: 'left', fontSize: 10, fontWeight: 800, letterSpacing: '.04em', textTransform: 'uppercase', opacity: 0.5, padding: '8px 10px', position: 'sticky', top: 0, background: T.panel };
+  const th = { textAlign: 'left', fontSize: 10, fontWeight: 800, letterSpacing: '.04em', textTransform: 'uppercase', color: T.textMuted, padding: '8px 10px', position: 'sticky', top: 0, background: T.panel };
   const td = { fontSize: 13, padding: '9px 10px', borderTop: `1px solid ${T.hair}`, whiteSpace: 'nowrap' };
   const compTag = (c) => ({
     fontSize: 12, fontWeight: 800, padding: '5px 11px', borderRadius: T.pill,
@@ -203,7 +203,7 @@ export function AdminPage({ team }) {
         <span style={{ fontWeight: 850, fontSize: 19, letterSpacing: '-.02em', fontFamily: T.display }}>
           <span style={{ color: T.accent }}>fot</span><span style={{ color: T.accent2 }}>app</span>
         </span>
-        <span style={{ fontSize: 13, opacity: 0.55, fontWeight: 600 }}>Manage squad</span>
+        <span style={{ fontSize: 13, color: T.textMuted, fontWeight: 600 }}>Manage squad</span>
         <TeamPicker T={T} team={team} param="admin" />
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
           <AccountChip T={T} />
@@ -214,7 +214,7 @@ export function AdminPage({ team }) {
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: phone ? '16px 14px' : '24px 26px' }}>
         <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
           <h1 style={{ margin: 0, fontFamily: T.display, fontSize: 28, fontWeight: 800 }}>{team.name}</h1>
-          <span style={{ fontSize: 13, opacity: 0.55 }}>{roster.length} players{edited ? ' · edited' : ''}</span>
+          <span style={{ fontSize: 13, color: T.textMuted }}>{roster.length} players{edited ? ' · edited' : ''}</span>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
             <span style={compTag(comp.noneu)}>Non-EU {comp.noneu.n}/{comp.noneu.lim.value}</span>
             <span style={compTag(comp.home)}>Greek {comp.home.n} (min {comp.home.lim.value})</span>
@@ -236,8 +236,8 @@ export function AdminPage({ team }) {
               {roster.map((p) => (
                 <tr key={p.num}>
                   <td style={{ ...td, opacity: 0.6 }}>{p.num}</td>
-                  <td style={{ ...td, fontWeight: 700 }}>{p.name}{p.onLoan && <span style={{ fontSize: 10, marginLeft: 6, opacity: 0.5 }}>LOAN</span>}</td>
-                  <td style={td}>{p.pos.join('/')}{p.pos2.length ? <span style={{ opacity: 0.45 }}> · {p.pos2.join('/')}</span> : null}</td>
+                  <td style={{ ...td, fontWeight: 700 }}>{p.name}{p.onLoan && <span style={{ fontSize: 10, marginLeft: 6, color: T.textMuted }}>LOAN</span>}</td>
+                  <td style={td}>{p.pos.join('/')}{p.pos2.length ? <span style={{ color: T.textMuted }}> · {p.pos2.join('/')}</span> : null}</td>
                   <td style={td}>{p.age}</td>
                   <td style={td}>{p.nat}</td>
                   <td style={{ ...td, color: p.reg === 'noneu' ? T.accent2 : p.reg === 'home' ? T.solid : T.text, fontWeight: 700 }}>{REG_LABEL[p.reg]}</td>

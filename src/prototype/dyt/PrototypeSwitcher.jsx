@@ -3,6 +3,7 @@
  * Dev-only; hidden in production builds.
  */
 import React from 'react';
+import { DEFAULT_SKIN } from '../../default-skin';
 
 const LABELS = {
   A: 'Side panel',
@@ -67,7 +68,7 @@ export function PrototypeSwitcher({ param, variants, current, onCycle, hint }) {
         >←</button>
         <span style={{ fontSize: 12, fontWeight: 700, padding: '0 10px', minWidth: 160, textAlign: 'center' }}>
           {current} — {label}
-          <span style={{ display: 'block', fontSize: 10, fontWeight: 500, opacity: 0.5, marginTop: 1 }}>
+          <span style={{ display: 'block', fontSize: 10, fontWeight: 500, color: DEFAULT_SKIN.textMutedOnDark, marginTop: 1 }}>
             ?{param}={current}
           </span>
         </span>

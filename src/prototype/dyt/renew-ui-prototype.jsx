@@ -18,6 +18,7 @@ export function RenewTierCompact({ T, deck, dark = false }) {
   const hair = dark ? 'rgba(255,255,255,.15)' : T.hair2;
   const soft = dark ? 'rgba(255,255,255,.08)' : T.soft;
   const text = dark ? '#f4f6fa' : T.text;
+  const muted = dark ? T.textMutedOnDark : T.textMuted;
   const tierBtn = (k, label) => (
     <button
       key={k}
@@ -34,7 +35,7 @@ export function RenewTierCompact({ T, deck, dark = false }) {
 
   return (
     <div style={{ color: text }}>
-      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', opacity: 0.5, marginBottom: 10 }}>
+      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: muted, marginBottom: 10 }}>
         New deal · vs current wage
       </div>
       <div style={{ display: 'flex', gap: 6 }}>
@@ -42,7 +43,7 @@ export function RenewTierCompact({ T, deck, dark = false }) {
         {tierBtn('same', 'Same')}
         {tierBtn('less', 'Lower')}
       </div>
-      <div style={{ fontSize: 11, opacity: 0.5, marginTop: 10, minHeight: 16, fontStyle: 'italic' }}>
+      <div style={{ fontSize: 11, color: muted, marginTop: 10, minHeight: 16, fontStyle: 'italic' }}>
         {RENEW_TIER_HINT[tier]}
       </div>
       <button
@@ -57,7 +58,7 @@ export function RenewTierCompact({ T, deck, dark = false }) {
       >Confirm renew →</button>
       <button type="button" onClick={cancelPending} style={{
         marginTop: 8, width: '100%', padding: '6px 0', border: 'none', background: 'transparent',
-        cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 600, color: text, opacity: 0.45,
+        cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 600, color: muted,
       }}>← Back</button>
     </div>
   );
@@ -78,7 +79,7 @@ function panelShell(T, { className = '', children, width }) {
         color: '#f4f6fa',
       }}
     >
-      <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.14em', opacity: 0.5 }}>NEW DEAL</span>
+      <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.14em', color: T.textMutedOnDark }}>NEW DEAL</span>
       <div style={{ marginTop: 12 }}>{children}</div>
     </div>
   );
@@ -167,7 +168,7 @@ function RenewPrototypeBody({ T, deck, current, cycle }) {
       }}>
         {!deck.player.expiring && !deck.pending && (
           <div style={{
-            fontSize: 12, fontWeight: 600, opacity: 0.55, textAlign: 'center', maxWidth: 300,
+            fontSize: 12, fontWeight: 600, color: T.textMuted, textAlign: 'center', maxWidth: 300,
             padding: '8px 12px', borderRadius: 8, background: withA(T.thin, 0.12), border: `1px solid ${withA(T.thin, 0.25)}`,
           }}>
             This player isn&apos;t expiring — tap ↻ anyway, or use arrows to find an expiring contract.

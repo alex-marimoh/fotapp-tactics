@@ -21,7 +21,7 @@ export function RosterTable({ roster }) {
   const regLabel = { home: 'HG', eu: 'EU', noneu: 'Non-EU' };
   const regColor = { home: T.solid, eu: T.text, noneu: T.accent2 };
   const th = { textAlign: 'left', fontSize: 10, fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase',
-    opacity: 0.5, padding: '7px 8px', position: 'sticky', top: 0, background: T.panel };
+    color: T.textMuted, padding: '7px 8px', position: 'sticky', top: 0, background: T.panel };
   const td = { fontSize: 12, padding: '8px', borderTop: `1px solid ${T.hair}`, whiteSpace: 'nowrap' };
   const fieldStyle = field(T, { padding: '7px 10px', fontSize: 12 });
   const Chip = ({ active, onClick, children }) => (
@@ -30,7 +30,7 @@ export function RosterTable({ roster }) {
       background: active ? T.accent : 'transparent', color: active ? T.onAccent : T.text }}>{children}</button>
   );
   const row = { display: 'flex', gap: 5, alignItems: 'center', flexWrap: 'wrap' };
-  const tag = { fontSize: 10, opacity: 0.45, width: 26, flexShrink: 0 };
+  const tag = { fontSize: 10, color: T.textMuted, width: 26, flexShrink: 0 };
 
   const active = (q.trim() ? 1 : 0) + (grp !== 'all' ? 1 : 0) + (reg !== 'all' ? 1 : 0);
   const clear = () => { setQ(''); setGrp('all'); setReg('all'); };
@@ -48,7 +48,7 @@ export function RosterTable({ roster }) {
           <button onClick={clear} style={{ background: 'transparent', border: 'none', cursor: 'pointer',
             fontFamily: 'inherit', fontSize: 12, fontWeight: 700, color: T.accent }}>Clear</button>
         )}
-        {active > 0 && <span style={{ marginLeft: 'auto', fontSize: 11, opacity: 0.5 }}>{rows.length} of {roster.length}</span>}
+        {active > 0 && <span style={{ marginLeft: 'auto', fontSize: 11, color: T.textMuted }}>{rows.length} of {roster.length}</span>}
       </div>
 
       {showFilters && (
@@ -85,7 +85,7 @@ export function RosterTable({ roster }) {
           <tbody>
             {rows.map((p) => (
               <tr key={p.num}>
-                <td style={{ ...td, opacity: 0.5 }}>{p.num}</td>
+                <td style={{ ...td, color: T.textMuted }}>{p.num}</td>
                 <td style={{ ...td, fontWeight: 700 }}>{p.name}</td>
                 <td style={{ ...td, opacity: 0.85 }}>{p.pos.join('/')}</td>
                 <td style={{ ...td, textAlign: 'center' }}>{p.age}</td>
@@ -100,7 +100,7 @@ export function RosterTable({ roster }) {
         </table>
         </div>
       ) : (
-        <div style={{ opacity: 0.5, fontSize: 13, padding: '16px 4px', textAlign: 'center' }}>No players match.</div>
+        <div style={{ color: T.textMuted, fontSize: 13, padding: '16px 4px', textAlign: 'center' }}>No players match.</div>
       )}
     </div>
   );

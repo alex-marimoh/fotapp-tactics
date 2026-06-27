@@ -4,7 +4,12 @@
 // graphics — rich saturated grass, crisp white lines, electric blue + broadcast
 // orange, Oswald condensed headlines.
 export const DEFAULT_SKIN = {
-  bg: '#eef2f6', panel: '#ffffff', text: '#141a22', surface: '#ffffff',
+  bg: '#eef2f6', panel: '#ffffff', text: '#141a22',
+  /** Secondary copy — ≥4.5:1 vs panel/bg (replaces opacity 0.4–0.55). */
+  textMuted: '#666a6f',
+  /** Secondary copy on dark quiz/renew panels — ≥4.5:1 vs ~#1c2433. */
+  textMutedOnDark: '#9398a0',
+  surface: '#ffffff',
   accent: '#1463ff', accentDark: '#0b49c9', accent2: '#ff5a1f', onAccent: '#ffffff',
   solid: '#1ba24e', thin: '#e08a16', gap: '#e23b34', oop: '#7c3aed',
   pitch: ['#3aa056', '#2f9249', '#27823f'],

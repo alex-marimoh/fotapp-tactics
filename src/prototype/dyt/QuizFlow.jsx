@@ -79,7 +79,7 @@ function Play({ T, model, decisions, decide, idx, setIdx, summary, onFinish }) {
       )}
       {!done && started && (
         <button type="button" onClick={onFinish}
-          style={{ position: 'absolute', bottom: 16, right: 16, zIndex: 20, border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, color: T.text, opacity: 0.4, textDecoration: 'underline' }}>
+          style={{ position: 'absolute', bottom: 16, right: 16, zIndex: 20, border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, color: T.textMuted, textDecoration: 'underline' }}>
           End early
         </button>
       )}
@@ -93,9 +93,9 @@ function Play({ T, model, decisions, decide, idx, setIdx, summary, onFinish }) {
 function Stat({ T, label, value, color, sub }) {
   return (
     <div style={{ flex: 1, minWidth: 130, padding: '14px 16px', background: T.panel, border: `1px solid ${T.hair}`, borderRadius: T.radius }}>
-      <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', opacity: 0.55 }}>{label}</div>
+      <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: T.textMuted }}>{label}</div>
       <div style={{ fontSize: 26, fontWeight: 800, color: color || T.text, fontVariantNumeric: 'tabular-nums', marginTop: 4 }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, opacity: 0.55, marginTop: 2 }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 11, color: T.textMuted, marginTop: 2 }}>{sub}</div>}
     </div>
   );
 }
@@ -105,7 +105,7 @@ function CallRow({ T, call }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderTop: `1px solid ${T.hair}` }}>
       <span style={{ flex: 1, fontSize: 14, fontWeight: 700, minWidth: 0 }}>{player.name}
-        <span style={{ fontSize: 12, opacity: 0.5, fontWeight: 400 }}> {player.pos[0]}</span>
+        <span style={{ fontSize: 12, color: T.textMuted, fontWeight: 400 }}> {player.pos[0]}</span>
       </span>
       <span style={{ fontSize: 12, fontWeight: 800, color: youColor, width: 62, textAlign: 'right' }}>You {verdict}</span>
       <div style={{ width: 132 }}>
@@ -144,9 +144,9 @@ function Result({ T, model, decisions, summary, onApply, onRestart }) {
             <span style={{ fontFamily: T.display, fontSize: 16, fontWeight: 800 }}>You vs. the crowd</span>
             <span style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.6 }}>agreed on {agreed}/{calls.length}</span>
           </div>
-          <div style={{ fontSize: 12, opacity: 0.55, marginBottom: 2 }}>{contrarian.length ? 'Where you went against the grain:' : 'Your boldest calls:'}</div>
+          <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 2 }}>{contrarian.length ? 'Where you went against the grain:' : 'Your boldest calls:'}</div>
           {showCalls.map((c) => <CallRow key={c.player.num} T={T} call={c} />)}
-          <div style={{ fontSize: 11, opacity: 0.4, marginTop: 10 }}>Crowd numbers are illustrative — this is where real fan votes plug in.</div>
+          <div style={{ fontSize: 11, color: T.textMuted, marginTop: 10 }}>Crowd numbers are illustrative — this is where real fan votes plug in.</div>
         </div>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center', marginTop: 4 }}>
@@ -194,9 +194,9 @@ export function QuizFlow({ team = getTeam(DEFAULT_TEAM_SLUG) }) {
         <button onClick={goBoard} style={{ border: 'none', background: 'transparent', padding: 0, cursor: 'pointer' }}>
           <Wordmark T={T} />
         </button>
-        <span style={{ fontSize: 13, opacity: 0.55, fontWeight: 600 }}>Squad quiz · {team.name}</span>
+        <span style={{ fontSize: 13, color: T.textMuted, fontWeight: 600 }}>Squad quiz · {team.name}</span>
         {phase === 'play' && (
-          <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, opacity: 0.45, fontVariantNumeric: 'tabular-nums' }}>
+          <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, color: T.textMuted, fontVariantNumeric: 'tabular-nums' }}>
             {idx + 1} / {summary.total}
           </span>
         )}
