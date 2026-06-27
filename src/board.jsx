@@ -1,8 +1,11 @@
 import React from 'react';
 import {
-  ROSTER, FORMATIONS, FORMATION_NAMES, PLACEHOLDER_NEWS, POSITION_TYPES, TIER_LABEL,
+  FORMATIONS, FORMATION_NAMES, PLACEHOLDER_NEWS, POSITION_TYPES, TIER_LABEL,
   buildDepth, healthOf, effectiveStarterNum, complianceOf, tierFor, HEALTH_LABEL,
 } from './squad-data';
+import {
+  getTeams, getTeam, DEFAULT_TEAM_SLUG, loadScenario, saveScenario, clearScenario,
+} from './data/store';
 
 // Full skin schema — colors PLUS style tokens (font, radius, glow, flat, borders).
 // The layout never changes; a skin only swaps these values. Override per render
@@ -40,6 +43,45 @@ const withA = (hex, a) => {
 
 const attackerSlot = (slots) => (slots.find((s) => s.type === 'ST') || slots[0]).id;
 
+// Club switcher in the ribbon — navigates to ?team=<slug> (a fresh board mount).
+function TeamPicker({ team }) {
+  const T = useT();
+  const [open, setOpen] = React.useState(false);
+  const teams = getTeams();
+  const dot = (c) => ({ width: 10, height: 10, borderRadius: 999, background: c, flexShrink: 0, border: `1px solid ${T.hair2}` });
+  return (
+    <div style={{ position: 'relative' }}>
+      <button onClick={() => setOpen((o) => !o)}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '7px 13px', borderRadius: T.pill,
+          border: `1px solid ${T.hair2}`, background: T.soft, color: T.text, fontWeight: 800, fontSize: 13,
+          cursor: 'pointer', fontFamily: 'inherit' }}>
+        <span style={dot(team.colors?.primary || T.accent)} />
+        {team.name}
+        <span style={{ fontSize: 10, opacity: 0.6 }}>▾</span>
+      </button>
+      {open && (
+        <>
+          <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
+          <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: 6, zIndex: 50, background: T.surface,
+            border: `1px solid ${T.hair2}`, borderRadius: T.radius, padding: 4, minWidth: 220, maxHeight: 360,
+            overflowY: 'auto', boxShadow: '0 12px 32px rgba(0,0,0,.35)' }}>
+            {teams.map((t) => (
+              <button key={t.slug} onClick={() => { window.location.search = `?team=${t.slug}`; }}
+                style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', textAlign: 'left', border: 'none',
+                  cursor: 'pointer', background: t.slug === team.slug ? withA(T.accent, 0.16) : 'transparent', color: T.text,
+                  padding: '9px 11px', borderRadius: Math.max(0, T.radius - 5), fontSize: 13,
+                  fontWeight: t.slug === team.slug ? 800 : 500, fontFamily: 'inherit' }}>
+                <span style={dot(t.colors?.primary || T.accent)} />
+                {t.name}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // True on wide screens — drives the landscape-pitch layout.
 function useWide(bp = 1080) {
   const [wide, setWide] = React.useState(() => typeof window !== 'undefined' && window.innerWidth >= bp);
@@ -52,7 +94,7 @@ function useWide(bp = 1080) {
   return wide;
 }
 
-export function TacticsBoard({ skin = DEFAULT_SKIN }) {
+export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_SLUG) }) {
   const T = skin;
   const hc = hcOf(T);
   const tierColor = tierColorOf(T);
@@ -75,11 +117,26 @@ export function TacticsBoard({ skin = DEFAULT_SKIN }) {
     fit();
     return () => ro.disconnect();
   }, [wide]);
-  const [roster, setRoster] = React.useState(ROSTER);
-  const [formation, setFormation] = React.useState(FORMATION_NAMES[0]);
-  const [depthMap, setDepthMap] = React.useState(() => ({ [FORMATION_NAMES[0]]: buildDepth(ROSTER, FORMATIONS[FORMATION_NAMES[0]]) }));
-  const [selected, setSelected] = React.useState(() => attackerSlot(FORMATIONS[FORMATION_NAMES[0]]));
-  const [leaving, setLeaving] = React.useState(() => new Set());
+  // Restore the autosaved scenario for this team, if any (Phase 1 persistence).
+  const saved = React.useMemo(() => loadScenario(team.slug), [team.slug]);
+  const startFormation = saved?.formation ?? FORMATION_NAMES[0];
+  const startRoster = saved?.roster ?? team.roster;
+  const [roster, setRoster] = React.useState(startRoster);
+  const [formation, setFormation] = React.useState(startFormation);
+  const [depthMap, setDepthMap] = React.useState(
+    () => saved?.depthMap ?? { [startFormation]: buildDepth(startRoster, FORMATIONS[startFormation]) },
+  );
+  const [selected, setSelected] = React.useState(() => attackerSlot(FORMATIONS[startFormation]));
+  const [leaving, setLeaving] = React.useState(() => new Set(saved?.leaving ?? []));
+
+  // Debounced autosave of the what-if scenario (formation, depth, leaving, roster).
+  React.useEffect(() => {
+    const id = setTimeout(
+      () => saveScenario(team.slug, { formation, depthMap, leaving: [...leaving], roster }),
+      400,
+    );
+    return () => clearTimeout(id);
+  }, [team.slug, formation, depthMap, leaving, roster]);
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [adding, setAdding] = React.useState(null); // slot id being added to
   const [addTab, setAddTab] = React.useState('roster');
@@ -144,7 +201,7 @@ export function TacticsBoard({ skin = DEFAULT_SKIN }) {
     setAdding(null);
   };
 
-  const comp = complianceOf(roster, leaving);
+  const comp = complianceOf(roster, leaving, team.rules);
   const selDepth = depth[selected];
   const selSlot = slots.find((s) => s.id === selected);
 
@@ -161,13 +218,26 @@ export function TacticsBoard({ skin = DEFAULT_SKIN }) {
         <span style={{ fontWeight: 850, fontSize: 19, letterSpacing: '-0.02em', fontFamily: T.display }}>
           <span style={{ color: T.accent }}>fot</span><span style={{ color: T.accent2 }}>app</span>
         </span>
-        <span style={{ fontSize: 13, opacity: 0.55, fontWeight: 600 }}>Build your season</span>
-        <button onClick={() => { window.location.search = '?quiz=squad'; }}
-          style={{ marginLeft: 'auto', padding: '8px 16px', borderRadius: T.pill, border: 'none',
-            background: T.flat ? T.accent : `linear-gradient(90deg,${T.accent},${T.accentDark})`, color: T.onAccent,
-            fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
-          Squad quiz →
-        </button>
+        <TeamPicker team={team} />
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button onClick={() => { clearScenario(team.slug); window.location.reload(); }}
+            title="Reset this board to the squad"
+            style={{ padding: '7px 13px', borderRadius: T.pill, border: `1px solid ${T.hair2}`, background: T.soft,
+              color: T.text, fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+            ↺ Reset
+          </button>
+          <button onClick={() => { window.location.search = `?admin=${team.slug}`; }}
+            style={{ padding: '7px 13px', borderRadius: T.pill, border: `1px solid ${T.hair2}`, background: T.soft,
+              color: T.text, fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+            Manage squad
+          </button>
+          <button onClick={() => { window.location.search = `?quiz=squad&team=${team.slug}`; }}
+            style={{ padding: '8px 16px', borderRadius: T.pill, border: 'none',
+              background: T.flat ? T.accent : `linear-gradient(90deg,${T.accent},${T.accentDark})`, color: T.onAccent,
+              fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+            Squad quiz →
+          </button>
+        </div>
       </div>
 
       {/* hero: pitch half | info half (pitch widens on wide screens) */}
