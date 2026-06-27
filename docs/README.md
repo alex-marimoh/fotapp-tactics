@@ -27,6 +27,10 @@ and watch each position's **depth health** (Solid / Thin / Gap) and **registrati
 | [0010](adr/0010-persistence-ephemeral-v1.md) | Persistence: ephemeral for v1 |
 | [0011](adr/0011-clean-slate-from-telemetry-engine.md) | Clean slate: rebuild from variant C's engine |
 | [0012](adr/0012-design-direction-field-hero.md) | Chosen look: Field hero (pitch \| info split) |
+| [0013](adr/0013-stack-standards-js-and-inline-styles.md) | Stack: plain JS/JSX + inline styles; small CSS for a11y |
+| [0014](adr/0014-anonymous-account-lifecycle.md) | Anonymous accounts: accept growth for now |
+| [0015](adr/0015-client-navigation-without-reload.md) | Navigation: tiny URL router, no react-router |
+| [0016](adr/0016-production-db-schema-v1.md) | Production DB + voting engine v1 direction (#2 sign-off) |
 
 ## Design
 
@@ -42,8 +46,8 @@ picker, add-signing/age-forward what-ifs, multi-competition quotas, mobile, pers
 ## Where the code lives
 
 - `src/squad-data.js` — data + domain model seam (roster, slots, depth, health, compliance).
-- `src/board.jsx` — the Field hero board (`TacticsBoard`), the whole UI.
-- `src/App.jsx` → renders `TacticsBoard`.
+- `src/board/` — the Field hero board (`TacticsBoard`) and subcomponents.
+- `src/App.jsx` → renders the active screen from URL query params.
 
 ## Open follow-ups (iteration on the real board)
 
