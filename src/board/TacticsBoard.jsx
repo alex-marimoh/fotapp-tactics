@@ -10,6 +10,7 @@ import { AccountChip } from '../auth/AccountChip';
 import { usePhone, useWide } from '../hooks/useViewport';
 import { withA } from '../lib/format';
 import { TeamPicker } from '../ui/TeamPicker';
+import { useDismissOnEscape } from '../ui/a11y';
 import { AddModal } from './AddModal';
 import { CompChip } from './CompChip';
 import { InfoLegend } from './InfoLegend';
@@ -28,6 +29,8 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
   const wide = useWide(1080);
   const phone = usePhone(720);
   const pitchWrapRef = React.useRef(null);
+  const formationTriggerRef = React.useRef(/** @type {HTMLButtonElement | null} */ (null));
+  const formationListId = React.useId();
   const [pitchBox, setPitchBox] = React.useState({ w: 0, h: 0 });
   React.useEffect(() => {
     const el = pitchWrapRef.current;
@@ -70,6 +73,7 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
   }, [team.slug, formation, depthMap, leaving, roster]);
 
   const [menuOpen, setMenuOpen] = React.useState(false);
+  useDismissOnEscape(menuOpen, () => setMenuOpen(false), formationTriggerRef);
   const [adding, setAdding] = React.useState(null);
   const [addTab, setAddTab] = React.useState('roster');
   const [form, setForm] = React.useState({ name: '', type: 'CB', reg: 'eu', age: '21', rating: '3' });
@@ -144,23 +148,49 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, flexWrap: 'wrap' }}>
             <div style={{ position: 'relative' }}>
-              <button onClick={() => setMenuOpen((o) => !o)}
+              <button
+                ref={formationTriggerRef}
+                type="button"
+                aria-haspopup="listbox"
+                aria-expanded={menuOpen}
+                aria-controls={menuOpen ? formationListId : undefined}
+                onClick={() => setMenuOpen((o) => !o)}
                 style={{ padding: '8px 16px', borderRadius: T.pill, border: 'none',
                   background: T.flat ? T.accent : `linear-gradient(90deg,${T.accent},${T.accentDark})`, color: T.onAccent, fontWeight: 800,
-                  fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>{formation} ▾</button>
+                  fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                {formation} <span aria-hidden="true">▾</span>
+              </button>
               {menuOpen && (
                 <>
-                  <div onClick={() => setMenuOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
-                  <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: 6, zIndex: 50,
-                    background: T.surface, border: `1px solid ${T.hair2}`, borderRadius: T.radius,
-                    padding: 4, minWidth: 150, boxShadow: '0 12px 32px rgba(0,0,0,.5)',
-                    maxHeight: 320, overflowY: 'auto' }}>
+                  <div
+                    role="presentation"
+                    onClick={() => setMenuOpen(false)}
+                    style={{ position: 'fixed', inset: 0, zIndex: 40 }}
+                  />
+                  <div
+                    id={formationListId}
+                    role="listbox"
+                    aria-label="Choose formation"
+                    style={{ position: 'absolute', top: '100%', left: 0, marginTop: 6, zIndex: 50,
+                      background: T.surface, border: `1px solid ${T.hair2}`, borderRadius: T.radius,
+                      padding: 4, minWidth: 150, boxShadow: '0 12px 32px rgba(0,0,0,.5)',
+                      maxHeight: 320, overflowY: 'auto' }}
+                  >
                     {FORMATION_NAMES.map((name) => (
-                      <button key={name} onClick={() => chooseFormation(name)}
+                      <button
+                        key={name}
+                        type="button"
+                        role="option"
+                        aria-selected={name === formation}
+                        onClick={() => chooseFormation(name)}
                         style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer',
                           background: name === formation ? withA(T.accent, 0.18) : 'transparent',
                           color: T.text, padding: '9px 12px', borderRadius: Math.max(0, T.radius - 5), fontSize: 13,
-                          fontWeight: name === formation ? 800 : 500, fontFamily: 'inherit' }}>{name}</button>
+                          fontWeight: name === formation ? 800 : 500, fontFamily: 'inherit' }}
+                      >
+                        {name}
+                      </button>
                     ))}
                   </div>
                 </>
