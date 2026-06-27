@@ -3,6 +3,7 @@ import { TacticsBoard } from './board';
 import { DEFAULT_SKIN } from './default-skin';
 import { getTeam, DEFAULT_TEAM_SLUG, isAdminFor } from './data/store';
 import { navigate, useAppRoute } from './navigation/appRoute';
+import { RouteErrorBoundary } from './ui/RouteErrorBoundary';
 
 const AdminPage = lazy(() =>
   import('./admin/AdminPage').then((m) => ({ default: m.AdminPage })),
@@ -53,23 +54,30 @@ function AccessDenied({ slug }) {
 export default function App() {
   const route = useAppRoute();
 
+  let content;
   if (route.screen === 'admin') {
     const adminSlug = route.admin;
-    if (!isAdminFor(adminSlug)) return <AccessDenied slug={adminSlug} />;
-    return (
-      <Suspense fallback={<RouteLoading />}>
-        <AdminPage team={getTeam(adminSlug)} />
-      </Suspense>
-    );
+    if (!isAdminFor(adminSlug)) {
+      content = <AccessDenied slug={adminSlug} />;
+    } else {
+      content = (
+        <Suspense fallback={<RouteLoading />}>
+          <AdminPage team={getTeam(adminSlug)} />
+        </Suspense>
+      );
+    }
+  } else {
+    const team = getTeam(route.team || DEFAULT_TEAM_SLUG);
+    if (route.screen === 'quiz') {
+      content = (
+        <Suspense fallback={<RouteLoading />}>
+          <QuizFlow team={team} />
+        </Suspense>
+      );
+    } else {
+      content = <TacticsBoard team={team} />;
+    }
   }
 
-  const team = getTeam(route.team || DEFAULT_TEAM_SLUG);
-  if (route.screen === 'quiz') {
-    return (
-      <Suspense fallback={<RouteLoading />}>
-        <QuizFlow team={team} />
-      </Suspense>
-    );
-  }
-  return <TacticsBoard team={team} />;
+  return <RouteErrorBoundary>{content}</RouteErrorBoundary>;
 }
