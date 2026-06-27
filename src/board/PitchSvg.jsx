@@ -4,7 +4,7 @@ export function PitchSvg({ horizontal }) {
   const T = useT();
   const vb = horizontal ? '0 0 105 68' : '0 0 68 105';
   return (
-    <svg viewBox={vb} preserveAspectRatio="none" width="100%" height="100%"
+    <svg viewBox={vb} preserveAspectRatio="none" width="100%" height="100%" aria-hidden="true"
       style={{ position: 'absolute', inset: 0, display: 'block' }}>
       <g fill="none" stroke={T.line} strokeWidth={1.2}>
         {horizontal ? (

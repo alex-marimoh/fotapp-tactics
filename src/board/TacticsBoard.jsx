@@ -170,12 +170,12 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
             minHeight: 0, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ position: 'relative', width: pitchBox.w || '100%', height: pitchBox.h || '100%' }}>
             {Array.from({ length: 9 }).map((_, i) => (
-              <div key={i} style={{ position: 'absolute', background: i % 2 ? T.soft : 'transparent',
+              <div key={i} aria-hidden="true" style={{ position: 'absolute', background: i % 2 ? T.soft : 'transparent',
                 ...(wide
                   ? { top: 0, bottom: 0, left: `${(i / 9) * 100}%`, width: `${100 / 9}%` }
                   : { left: 0, right: 0, top: `${(i / 9) * 100}%`, height: `${100 / 9}%` }) }} />
             ))}
-            <div style={{ position: 'absolute', inset: 0 }}><PitchSvg horizontal={wide} /></div>
+            <div style={{ position: 'absolute', inset: 0 }} aria-hidden="true"><PitchSvg horizontal={wide} /></div>
 
             {slots.map((slot) => {
               const h = healthOf(depth, slot.id, leaving);
@@ -185,23 +185,28 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
               const nx = wide ? 100 - slot.top : slot.left;
               const ny = wide ? slot.left : slot.top;
               const sz = wide ? 46 : 42;
+              const markerLabel = p
+                ? `${slot.label}, ${p.name}, ${HEALTH_LABEL[h]}`
+                : `${slot.label}, ${slot.label} gap, ${HEALTH_LABEL[h]}`;
               return (
-                <div key={slot.id} onClick={() => setSelected(slot.id)}
+                <button key={slot.id} type="button" onClick={() => setSelected(slot.id)}
+                  aria-label={markerLabel} aria-current={isSel ? 'true' : undefined}
                   style={{ position: 'absolute', left: `${nx}%`, top: `${ny}%`,
                     transform: `translate(-50%,-50%) scale(${isSel ? 1.08 : 1})`, transition: 'transform .15s',
-                    cursor: 'pointer', textAlign: 'center', zIndex: isSel ? 6 : 3 }}>
-                  <div style={{ width: sz, height: sz, borderRadius: '50%', margin: '0 auto',
+                    cursor: 'pointer', textAlign: 'center', zIndex: isSel ? 6 : 3,
+                    border: 'none', background: 'transparent', padding: 0, fontFamily: 'inherit', color: 'inherit' }}>
+                  <div aria-hidden="true" style={{ width: sz, height: sz, borderRadius: '50%', margin: '0 auto',
                     background: withA(T.bg, 0.8), border: `2.5px solid ${hc[h]}`,
                     boxShadow: T.glow ? `0 0 14px ${hc[h]}66, 0 4px 10px rgba(0,0,0,.45)` : 'none',
                     display: 'grid', placeItems: 'center' }}>
                     <span style={{ fontWeight: 800, fontSize: wide ? 15 : 14 }}>{p ? p.num : '!'}</span>
                   </div>
-                  <div style={{ marginTop: 5, display: 'inline-block', padding: '2px 8px', borderRadius: T.pill,
+                  <div aria-hidden="true" style={{ marginTop: 5, display: 'inline-block', padding: '2px 8px', borderRadius: T.pill,
                     background: withA(T.bg, 0.74), fontSize: wide ? 12 : 11, fontWeight: 700,
                     color: p ? T.text : hc.gap, whiteSpace: 'nowrap' }}>
                     {p ? p.name : `${slot.label} gap`}
                   </div>
-                </div>
+                </button>
               );
             })}
 
