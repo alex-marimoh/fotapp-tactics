@@ -7,6 +7,7 @@ import { DEFAULT_SKIN } from '../../board';
 import { SwipeDeck } from './SwipeDeck';
 import { createQuizModel, archetypeOf, fmtM, fmtSalaryYear } from './data';
 import { getTeam, DEFAULT_TEAM_SLUG, saveQuizResult, listQuizResults } from '../../data/store';
+import { AccountChip } from '../../auth/AccountChip';
 import { decidedCount } from './quiz-shared';
 
 // ---- shared bits ----------------------------------------------------------
@@ -198,10 +199,13 @@ export function QuizFlow({ team = getTeam(DEFAULT_TEAM_SLUG) }) {
             {idx + 1} / {summary.total}
           </span>
         )}
-        <button onClick={goBoard} style={{ marginLeft: phase === 'play' ? 12 : 'auto', padding: '7px 14px', borderRadius: T.pill, border: `1px solid ${T.hair2}`,
-          cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 12, color: T.text, background: T.soft }}>
-          ← Back to board
-        </button>
+        <div style={{ marginLeft: phase === 'play' ? 0 : 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <AccountChip T={T} />
+          <button onClick={goBoard} style={{ padding: '7px 14px', borderRadius: T.pill, border: `1px solid ${T.hair2}`,
+            cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 12, color: T.text, background: T.soft }}>
+            ← Back to board
+          </button>
+        </div>
       </div>
 
       <div style={{ flex: 1, minHeight: 0 }}>

@@ -4,8 +4,9 @@ import {
   buildDepth, healthOf, effectiveStarterNum, complianceOf, tierFor, HEALTH_LABEL,
 } from './squad-data';
 import {
-  getTeams, getTeam, DEFAULT_TEAM_SLUG, loadScenario, saveScenario, clearScenario,
+  getTeams, getTeam, DEFAULT_TEAM_SLUG, loadScenario, saveScenario, clearScenario, isAdminFor,
 } from './data/store';
+import { AccountChip } from './auth/AccountChip';
 
 // Full skin schema — colors PLUS style tokens (font, radius, glow, flat, borders).
 // The layout never changes; a skin only swaps these values. Override per render
@@ -428,17 +429,20 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
         </span>
         <TeamPicker team={team} />
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <AccountChip T={T} />
           <button onClick={() => { clearScenario(team.slug); window.location.reload(); }}
             title="Reset this board to the squad"
             style={{ padding: '7px 13px', borderRadius: T.pill, border: `1px solid ${T.hair2}`, background: T.soft,
               color: T.text, fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
             ↺ Reset
           </button>
+          {isAdminFor(team.slug) && (
           <button onClick={() => { window.location.search = `?admin=${team.slug}`; }}
             style={{ padding: '7px 13px', borderRadius: T.pill, border: `1px solid ${T.hair2}`, background: T.soft,
               color: T.text, fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
             Manage squad
           </button>
+          )}
           <button onClick={() => { window.location.search = `?quiz=squad&team=${team.slug}`; }}
             style={{ padding: '8px 16px', borderRadius: T.pill, border: 'none',
               background: T.flat ? T.accent : `linear-gradient(90deg,${T.accent},${T.accentDark})`, color: T.onAccent,
