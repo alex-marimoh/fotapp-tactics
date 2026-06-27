@@ -9,6 +9,7 @@ import {
 import { AccountChip } from '../auth/AccountChip';
 import { usePhone, useWide } from '../hooks/useViewport';
 import { withA } from '../lib/format';
+import { navigate } from '../navigation/appRoute';
 import { TeamPicker } from '../ui/TeamPicker';
 import { useDismissOnEscape } from '../ui/a11y';
 import { AddModal } from './AddModal';
@@ -378,13 +379,13 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
             ↺ Reset
           </button>
           {isAdminFor(team.slug) && (
-          <button onClick={() => { window.location.search = `?admin=${team.slug}`; }}
+          <button onClick={() => navigate({ admin: team.slug })}
             style={{ padding: '7px 13px', borderRadius: T.pill, border: `1px solid ${T.hair2}`, background: T.soft,
               color: T.text, fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
             Manage squad
           </button>
           )}
-          <button onClick={() => { window.location.search = `?quiz=squad&team=${team.slug}`; }}
+          <button onClick={() => navigate({ quiz: 'squad', team: team.slug })}
             style={{ padding: '8px 16px', borderRadius: T.pill, border: 'none',
               background: T.flat ? T.accent : `linear-gradient(90deg,${T.accent},${T.accentDark})`, color: T.onAccent,
               fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>

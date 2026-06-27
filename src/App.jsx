@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { TacticsBoard } from './board';
 import { DEFAULT_SKIN } from './default-skin';
 import { getTeam, DEFAULT_TEAM_SLUG, isAdminFor } from './data/store';
+import { navigate, useAppRoute } from './navigation/appRoute';
 
 const AdminPage = lazy(() =>
   import('./admin/AdminPage').then((m) => ({ default: m.AdminPage })),
@@ -36,7 +37,7 @@ function AccessDenied({ slug }) {
         </p>
         <button
           type="button"
-          onClick={() => { window.location.search = slug ? `?team=${slug}` : ''; }}
+          onClick={() => navigate(slug ? { team: slug } : {})}
           style={{
             padding: '9px 18px', borderRadius: T.pill, border: `1px solid ${T.hair2}`, cursor: 'pointer',
             fontFamily: 'inherit', fontWeight: 700, fontSize: 13, color: T.text, background: T.soft,
@@ -50,9 +51,10 @@ function AccessDenied({ slug }) {
 }
 
 export default function App() {
-  const params = new URLSearchParams(window.location.search);
-  const adminSlug = params.get('admin');
-  if (adminSlug) {
+  const route = useAppRoute();
+
+  if (route.screen === 'admin') {
+    const adminSlug = route.admin;
     if (!isAdminFor(adminSlug)) return <AccessDenied slug={adminSlug} />;
     return (
       <Suspense fallback={<RouteLoading />}>
@@ -61,8 +63,8 @@ export default function App() {
     );
   }
 
-  const team = getTeam(params.get('team') || DEFAULT_TEAM_SLUG);
-  if (params.get('quiz') === 'squad') {
+  const team = getTeam(route.team || DEFAULT_TEAM_SLUG);
+  if (route.screen === 'quiz') {
     return (
       <Suspense fallback={<RouteLoading />}>
         <QuizFlow team={team} />

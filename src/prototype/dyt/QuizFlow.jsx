@@ -7,6 +7,7 @@ import { DEFAULT_SKIN } from '../../default-skin';
 import { SwipeDeck } from './SwipeDeck';
 import { createQuizModel, archetypeOf, fmtM, fmtSalaryYear } from './data';
 import { getTeam, DEFAULT_TEAM_SLUG, saveQuizResult, listQuizResults } from '../../data/store';
+import { navigate } from '../../navigation/appRoute';
 import { AccountChip } from '../../auth/AccountChip';
 import { decidedCount } from './quiz-shared-utils';
 import { primaryBtn, ghostBtn } from '../../ui/styles';
@@ -170,7 +171,7 @@ export function QuizFlow({ team = getTeam(DEFAULT_TEAM_SLUG) }) {
   const summary = React.useMemo(() => model.summaryOf(decisions), [model, decisions]);
 
   const restart = () => { setDecisions({}); setIdx(0); setPhase('intro'); };
-  const goBoard = () => { window.location.search = `?team=${team.slug}`; };
+  const goBoard = () => navigate({ team: team.slug });
 
   const savedRef = React.useRef(false);
   React.useEffect(() => {

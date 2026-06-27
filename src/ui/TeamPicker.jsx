@@ -1,6 +1,7 @@
 import React from 'react';
 import { getTeams } from '../data/store';
 import { withA } from '../lib/format';
+import { navigate } from '../navigation/appRoute';
 import { useDismissOnEscape } from './a11y';
 
 /**
@@ -84,7 +85,7 @@ export function TeamPicker({ T, team, param = 'team' }) {
                 type="button"
                 role="option"
                 aria-selected={t.slug === team.slug}
-                onClick={() => { window.location.search = `?${param}=${t.slug}`; }}
+                onClick={() => navigate({ [param]: t.slug })}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
