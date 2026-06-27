@@ -38,14 +38,14 @@ export const fmtSalaryYear = (weeklyK) => {
 };
 export { HEALTH_LABEL };
 
-/** Display label: `7 C. Mihalakis` — number, initial, surname. */
+/** Display label: `7 Mihalakis` — squad number + surname (names are surname-only in the generator). */
 export function displayName(p) {
-  return `${p.num} ${p.name.charAt(0)}. ${p.name}`;
+  return `${p.num} ${p.name}`;
 }
 
 /** Card title without squad number — number lives in the medallion. */
 export function displayNameCard(p) {
-  return `${p.name.charAt(0)}. ${p.name}`;
+  return p.name;
 }
 
 /** Natural + secondary positions for the deck card. */

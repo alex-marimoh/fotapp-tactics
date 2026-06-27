@@ -56,7 +56,12 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
   const [selected, setSelected] = React.useState(() => attackerSlot(FORMATIONS[startFormation]));
   const [leaving, setLeaving] = React.useState(() => new Set(saved?.leaving ?? []));
 
+  const skipAutosaveRef = React.useRef(true);
   React.useEffect(() => {
+    if (skipAutosaveRef.current) {
+      skipAutosaveRef.current = false;
+      return;
+    }
     const id = setTimeout(
       () => saveScenario(team.slug, { formation, depthMap, leaving: [...leaving], roster }),
       400,
