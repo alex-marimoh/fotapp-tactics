@@ -1,5 +1,6 @@
 import React from 'react';
 import { bootStore, usesSupabase } from './data/store';
+import { ToastHost } from './ui/ToastHost';
 import App from './App.jsx';
 
 function BootScreen() {
@@ -39,5 +40,10 @@ export function Root() {
   }
 
   if (!ready) return <BootScreen />;
-  return <App />;
+  return (
+    <>
+      <App />
+      <ToastHost />
+    </>
+  );
 }

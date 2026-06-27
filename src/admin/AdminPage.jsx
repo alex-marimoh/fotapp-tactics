@@ -10,7 +10,7 @@ import { POSITION_TYPES, complianceOf } from '../squad-data';
 import { ALL_NATIONS, regForNat } from '../data/names';
 import { SEASON } from '../lib/format';
 import {
-  upsertPlayer, deletePlayer, regenerateTeam, hasRosterEdits,
+  upsertPlayer, deletePlayer, regenerateTeam, hasRosterEdits, usesSupabase, subscribeRoster,
 } from '../data/store';
 import { AccountChip } from '../auth/AccountChip';
 import { usePhone } from '../hooks/useViewport';
@@ -152,6 +152,11 @@ export function AdminPage({ team }) {
   const [roster, setRoster] = React.useState(team.roster);
   const [editing, setEditing] = React.useState(null); // { player, originalNum } | null
   const edited = hasRosterEdits(team.slug);
+
+  React.useEffect(() => {
+    if (!usesSupabase()) return undefined;
+    return subscribeRoster(team.slug, setRoster);
+  }, [team.slug]);
 
   const comp = complianceOf(roster, EMPTY, team.rules);
   const otherNums = (originalNum) => new Set(roster.filter((p) => p.num !== originalNum).map((p) => p.num));

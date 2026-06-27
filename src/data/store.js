@@ -45,3 +45,4 @@ export const saveScenario = (...a) => backend.saveScenario(...a);
 export const clearScenario = (...a) => backend.clearScenario(...a);
 export const saveQuizResult = (...a) => backend.saveQuizResult(...a);
 export const listQuizResults = (...a) => backend.listQuizResults(...a);
+export const subscribeRoster = (...a) => (backend.subscribeRoster ? backend.subscribeRoster(...a) : () => {});
