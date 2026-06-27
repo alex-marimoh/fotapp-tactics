@@ -10,9 +10,10 @@
  * with home clamped to >= 3 so the homegrown minimum stays satisfiable.
  */
 import { POSITION_TYPES } from '../squad-data';
+import { SEASON, round5 } from '../lib/format';
 import { poolForNat, EU_NATIONS, NONEU_NATIONS } from './names';
 
-export const SEASON = 2026; // contracts ending this year are expiring now
+export { SEASON } from '../lib/format';
 
 // --- seeded RNG (mulberry32 off a string hash) -----------------------------
 function hash(str) {
@@ -55,8 +56,6 @@ const ADJ = {
 
 const VAL_BY_RATING = { 1: 0.4, 2: 1, 3: 2.5, 4: 6, 5: 12 };  // € millions, at peak age
 const WAGE_BY_RATING = { 1: 5, 2: 10, 3: 18, 4: 32, 5: 55 };  // € k / week, at peak age
-const round5 = (n) => Math.max(0.3, Math.round(n * 2) / 2);
-
 function valueOf(rating, age) {
   const ageF = Math.max(0.5, 1.05 - Math.abs(age - 25) * 0.045);
   return round5(VAL_BY_RATING[rating] * ageF);

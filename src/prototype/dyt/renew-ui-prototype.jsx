@@ -3,7 +3,7 @@
  * Question: card stays visible; where does Higher/Same/Lower live?
  */
 import React from 'react';
-import { withA } from './quiz-shared-utils';
+import { withA, RENEW_TIER_HINT } from '../../lib/format';
 import { TradingCardView, DeckActionButtons } from './quiz-deck-ui';
 import { KeyedDeckSession } from './deck-session';
 import { PrototypeSwitcher } from './PrototypeSwitcher';
@@ -11,11 +11,6 @@ import { setPrototypeVariant } from './prototype-variant';
 import { RENEW_PROTOTYPE_VARIANTS } from './renew-prototype-variant';
 
 const VARIANTS = RENEW_PROTOTYPE_VARIANTS;
-const RENEW_TIER_HINT = {
-  more: 'A step above current',
-  same: 'Hold the line',
-  less: 'A step below current',
-};
 
 /** Tier step only — salary already on the card. */
 export function RenewTierCompact({ T, deck, dark = false }) {

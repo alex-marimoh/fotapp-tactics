@@ -2,6 +2,7 @@ import React from 'react';
 import {
   currentUser, signInWithEmail, signInWithGoogle, signOut, onAuthChange, usesSupabase,
 } from '../data/store';
+import { field, primaryBtn, ghostBtn } from '../ui/styles';
 
 /**
  * Account chip + sign-in modal for the app ribbon.
@@ -26,19 +27,9 @@ export function AccountChip({ T }) {
     cursor: usesSupabase() ? 'pointer' : 'default', fontFamily: 'inherit', maxWidth: 180,
     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
   };
-  const field = {
-    background: T.soft, border: `1px solid ${T.hair2}`, color: T.text, fontFamily: 'inherit',
-    borderRadius: Math.max(0, T.radius - 4), padding: '10px 12px', fontSize: 13, width: '100%', boxSizing: 'border-box',
-  };
-  const primaryBtn = {
-    padding: '9px 16px', borderRadius: T.pill, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-    fontWeight: 800, fontSize: 13, color: T.onAccent,
-    background: T.flat ? T.accent : `linear-gradient(90deg,${T.accent},${T.accentDark})`,
-  };
-  const ghostBtn = {
-    padding: '9px 14px', borderRadius: T.pill, border: `1px solid ${T.hair2}`, cursor: 'pointer',
-    fontFamily: 'inherit', fontWeight: 700, fontSize: 12, color: T.text, background: T.soft,
-  };
+  const fieldStyle = field(T, { padding: '10px 12px' });
+  const primaryStyle = primaryBtn(T, { padding: '9px 16px' });
+  const ghostStyle = ghostBtn(T);
 
   const run = async (fn) => {
     setBusy(true);
@@ -84,7 +75,7 @@ export function AccountChip({ T }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              style={{ ...field, marginBottom: 10 }}
+              style={{ ...fieldStyle, marginBottom: 10 }}
             />
             <button
               type="button"
@@ -95,7 +86,7 @@ export function AccountChip({ T }) {
                   ? 'Check your email to confirm and link this account.'
                   : 'Magic link sent — check your email.');
               })}
-              style={{ ...primaryBtn, width: '100%', marginBottom: 10, opacity: busy || !email.trim() ? 0.5 : 1 }}
+              style={{ ...primaryStyle, width: '100%', marginBottom: 10, opacity: busy || !email.trim() ? 0.5 : 1 }}
             >
               Send magic link
             </button>
@@ -103,13 +94,13 @@ export function AccountChip({ T }) {
               type="button"
               disabled={busy}
               onClick={() => run(signInWithGoogle)}
-              style={{ ...ghostBtn, width: '100%', marginBottom: 16 }}
+              style={{ ...ghostStyle, width: '100%', marginBottom: 16 }}
             >
               Continue with Google
             </button>
             {status && <p style={{ margin: '0 0 12px', fontSize: 12, color: T.accent }}>{status}</p>}
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button type="button" onClick={() => setOpen(false)} style={ghostBtn}>Close</button>
+              <button type="button" onClick={() => setOpen(false)} style={ghostStyle}>Close</button>
               <button
                 type="button"
                 disabled={busy}
@@ -117,7 +108,7 @@ export function AccountChip({ T }) {
                   await signOut();
                   setOpen(false);
                 })}
-                style={{ ...ghostBtn, color: T.gap }}
+                style={{ ...ghostStyle, color: T.gap }}
               >
                 Sign out
               </button>

@@ -9,6 +9,7 @@ import { createQuizModel, archetypeOf, fmtM, fmtSalaryYear } from './data';
 import { getTeam, DEFAULT_TEAM_SLUG, saveQuizResult, listQuizResults } from '../../data/store';
 import { AccountChip } from '../../auth/AccountChip';
 import { decidedCount } from './quiz-shared-utils';
+import { primaryBtn, ghostBtn } from '../../ui/styles';
 
 // ---- shared bits ----------------------------------------------------------
 function Wordmark({ T }) {
@@ -18,11 +19,10 @@ function Wordmark({ T }) {
     </span>
   );
 }
-const primaryBtn = (T) => ({ padding: '13px 28px', borderRadius: T.pill, border: 'none', cursor: 'pointer',
-  fontFamily: 'inherit', fontWeight: 800, fontSize: 15, color: T.onAccent,
-  background: T.flat ? T.accent : `linear-gradient(90deg,${T.accent},${T.accentDark})`, boxShadow: '0 8px 24px rgba(20,99,255,.35)' });
-const ghostBtn = (T) => ({ padding: '13px 22px', borderRadius: T.pill, border: `1px solid ${T.hair2}`, cursor: 'pointer',
-  fontFamily: 'inherit', fontWeight: 800, fontSize: 14, color: T.text, background: T.soft });
+const quizPrimaryBtn = (T) => primaryBtn(T, {
+  padding: '13px 28px', fontSize: 15, boxShadow: '0 8px 24px rgba(20,99,255,.35)',
+});
+const quizGhostBtn = (T) => ghostBtn(T, { padding: '13px 22px', fontWeight: 800, fontSize: 14 });
 
 // ===========================================================================
 // Intro — the front door
@@ -47,7 +47,7 @@ function Intro({ T, total, onStart, last }) {
         {step('♥', T.solid, 'Keep')}
         {step('✕', T.gap, 'Drop')}
       </div>
-      <button onClick={onStart} style={{ ...primaryBtn(T), marginTop: 8, padding: '15px 34px', fontSize: 16 }}>Start the quiz →</button>
+      <button onClick={onStart} style={{ ...quizPrimaryBtn(T), marginTop: 8, padding: '15px 34px', fontSize: 16 }}>Start the quiz →</button>
       {last && (
         <div style={{ marginTop: 6, fontSize: 13, opacity: 0.65 }}>
           Last time: <b style={{ opacity: 1 }}>{last.archetype}</b> · war chest {fmtM(last.warChest)} · {last.sellCount} sold
@@ -71,7 +71,7 @@ function Play({ T, model, decisions, decide, idx, setIdx, summary, onFinish }) {
       </div>
       {done && (
         <div style={{ position: 'absolute', bottom: 24, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 20 }}>
-          <button type="button" onClick={onFinish} style={{ ...primaryBtn(T), padding: '14px 32px', fontSize: 15, boxShadow: '0 12px 40px rgba(20,99,255,.4)' }}>
+          <button type="button" onClick={onFinish} style={{ ...quizPrimaryBtn(T), padding: '14px 32px', fontSize: 15, boxShadow: '0 12px 40px rgba(20,99,255,.4)' }}>
             See your result →
           </button>
         </div>
@@ -149,8 +149,8 @@ function Result({ T, model, decisions, summary, onApply, onRestart }) {
         </div>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center', marginTop: 4 }}>
-          <button onClick={onApply} style={primaryBtn(T)}>Apply to my board →</button>
-          <button onClick={onRestart} style={ghostBtn(T)}>Start over</button>
+          <button onClick={onApply} style={quizPrimaryBtn(T)}>Apply to my board →</button>
+          <button onClick={onRestart} style={quizGhostBtn(T)}>Start over</button>
         </div>
       </div>
     </div>

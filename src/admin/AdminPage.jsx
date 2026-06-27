@@ -8,41 +8,17 @@ import React from 'react';
 import { DEFAULT_SKIN } from '../default-skin';
 import { POSITION_TYPES, complianceOf } from '../squad-data';
 import { ALL_NATIONS, regForNat } from '../data/names';
-import { SEASON } from '../data/generator';
+import { SEASON } from '../lib/format';
 import {
-  getTeams, upsertPlayer, deletePlayer, regenerateTeam, hasRosterEdits,
+  upsertPlayer, deletePlayer, regenerateTeam, hasRosterEdits,
 } from '../data/store';
 import { AccountChip } from '../auth/AccountChip';
+import { usePhone } from '../hooks/useViewport';
+import { field, primaryBtn, ghostBtn } from '../ui/styles';
+import { TeamPicker } from '../ui/TeamPicker';
 
 const REG_LABEL = { home: 'Greek (HG)', eu: 'EU', noneu: 'Non-EU' };
 const EMPTY = new Set();
-
-// Phone-width detector — the wide roster table scrolls horizontally instead of
-// breaking the page on small screens.
-function usePhone(bp = 720) {
-  const [phone, setPhone] = React.useState(() => typeof window !== 'undefined' && window.innerWidth < bp);
-  React.useEffect(() => {
-    const onResize = () => setPhone(window.innerWidth < bp);
-    window.addEventListener('resize', onResize);
-    onResize();
-    return () => window.removeEventListener('resize', onResize);
-  }, [bp]);
-  return phone;
-}
-
-const field = (T) => ({
-  background: T.soft, border: `1px solid ${T.hair2}`, color: T.text, fontFamily: 'inherit',
-  borderRadius: Math.max(0, T.radius - 4), padding: '8px 10px', fontSize: 13, width: '100%', boxSizing: 'border-box',
-});
-const primaryBtn = (T) => ({
-  padding: '9px 18px', borderRadius: T.pill, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-  fontWeight: 800, fontSize: 13, color: T.onAccent,
-  background: T.flat ? T.accent : `linear-gradient(90deg,${T.accent},${T.accentDark})`,
-});
-const ghostBtn = (T) => ({
-  padding: '9px 14px', borderRadius: T.pill, border: `1px solid ${T.hair2}`, cursor: 'pointer',
-  fontFamily: 'inherit', fontWeight: 700, fontSize: 12, color: T.text, background: T.soft,
-});
 
 function FieldLabel({ children }) {
   return <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', opacity: 0.55, marginBottom: 4 }}>{children}</div>;
@@ -170,32 +146,6 @@ function PlayerEditor({ T, initial, originalNum, otherNums, onSave, onCancel }) 
   );
 }
 
-// ---- team switcher (mirrors the board picker, navigates to ?admin=) --------
-function AdminTeamPicker({ T, team }) {
-  const [open, setOpen] = React.useState(false);
-  const teams = getTeams();
-  const dot = (c) => ({ width: 10, height: 10, borderRadius: 999, background: c, flexShrink: 0, border: `1px solid ${T.hair2}` });
-  return (
-    <div style={{ position: 'relative' }}>
-      <button onClick={() => setOpen((o) => !o)} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '7px 13px', borderRadius: T.pill, border: `1px solid ${T.hair2}`, background: T.soft, color: T.text, fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
-        <span style={dot(team.colors?.primary || T.accent)} />{team.name}<span style={{ fontSize: 10, opacity: 0.6 }}>▾</span>
-      </button>
-      {open && (
-        <>
-          <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
-          <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: 6, zIndex: 50, background: T.surface, border: `1px solid ${T.hair2}`, borderRadius: T.radius, padding: 4, minWidth: 220, maxHeight: 360, overflowY: 'auto', boxShadow: '0 12px 32px rgba(0,0,0,.35)' }}>
-            {teams.map((t) => (
-              <button key={t.slug} onClick={() => { window.location.search = `?admin=${t.slug}`; }} style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer', background: t.slug === team.slug ? 'rgba(20,99,255,.16)' : 'transparent', color: T.text, padding: '9px 11px', borderRadius: Math.max(0, T.radius - 5), fontSize: 13, fontWeight: t.slug === team.slug ? 800 : 500, fontFamily: 'inherit' }}>
-                <span style={dot(t.colors?.primary || T.accent)} />{t.name}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
 export function AdminPage({ team }) {
   const T = DEFAULT_SKIN;
   const phone = usePhone(720);
@@ -234,7 +184,7 @@ export function AdminPage({ team }) {
           <span style={{ color: T.accent }}>fot</span><span style={{ color: T.accent2 }}>app</span>
         </span>
         <span style={{ fontSize: 13, opacity: 0.55, fontWeight: 600 }}>Manage squad</span>
-        <AdminTeamPicker T={T} team={team} />
+        <TeamPicker T={T} team={team} param="admin" />
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
           <AccountChip T={T} />
           <button onClick={() => { window.location.search = `?team=${team.slug}`; }} style={ghostBtn(T)}>← Back to board</button>
