@@ -24,8 +24,6 @@ const serverPlayers = vi.hoisted(() => ([
 const mockDelete = vi.hoisted(() => vi.fn());
 const mockSelectEq = vi.hoisted(() => vi.fn());
 
-vi.mock('../ui/toast', () => ({ showToast }));
-
 function userScopedQuery() {
   const result = Promise.resolve({ data: [], error: null });
   const chain = {
@@ -37,8 +35,8 @@ function userScopedQuery() {
   };
 }
 
-vi.mock('../supabaseClient', () => ({
-  getSupabase: () => ({
+function buildMockClient() {
+  return {
     auth: {
       getSession: async () => ({ data: { session: { user: { id: 'u1' } } } }),
       signInAnonymously: async () => ({ data: { user: { id: 'u1' } }, error: null }),
@@ -92,7 +90,16 @@ vi.mock('../supabaseClient', () => ({
         select: () => userScopedQuery(),
       };
     },
-  }),
+  };
+}
+
+const mockClient = vi.hoisted(() => buildMockClient());
+
+vi.mock('../ui/toast', () => ({ showToast }));
+
+vi.mock('../supabaseClient', () => ({
+  ensureSupabaseClient: async () => mockClient,
+  getSupabase: () => mockClient,
 }));
 
 describe('supabaseBackend player write failures', () => {

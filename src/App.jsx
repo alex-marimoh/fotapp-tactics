@@ -1,8 +1,26 @@
+import { lazy, Suspense } from 'react';
 import { TacticsBoard } from './board';
 import { DEFAULT_SKIN } from './default-skin';
-import { QuizFlow } from './prototype/dyt/QuizFlow';
-import { AdminPage } from './admin/AdminPage';
 import { getTeam, DEFAULT_TEAM_SLUG, isAdminFor } from './data/store';
+
+const AdminPage = lazy(() =>
+  import('./admin/AdminPage').then((m) => ({ default: m.AdminPage })),
+);
+const QuizFlow = lazy(() =>
+  import('./prototype/dyt/QuizFlow').then((m) => ({ default: m.QuizFlow })),
+);
+
+function RouteLoading() {
+  const T = DEFAULT_SKIN;
+  return (
+    <div style={{
+      minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: T.bg, color: T.text, fontFamily: T.font,
+    }}>
+      <p style={{ fontSize: 14, opacity: 0.6 }}>Loading…</p>
+    </div>
+  );
+}
 
 function AccessDenied({ slug }) {
   const T = DEFAULT_SKIN;
@@ -36,10 +54,20 @@ export default function App() {
   const adminSlug = params.get('admin');
   if (adminSlug) {
     if (!isAdminFor(adminSlug)) return <AccessDenied slug={adminSlug} />;
-    return <AdminPage team={getTeam(adminSlug)} />;
+    return (
+      <Suspense fallback={<RouteLoading />}>
+        <AdminPage team={getTeam(adminSlug)} />
+      </Suspense>
+    );
   }
 
   const team = getTeam(params.get('team') || DEFAULT_TEAM_SLUG);
-  if (params.get('quiz') === 'squad') return <QuizFlow team={team} />;
+  if (params.get('quiz') === 'squad') {
+    return (
+      <Suspense fallback={<RouteLoading />}>
+        <QuizFlow team={team} />
+      </Suspense>
+    );
+  }
   return <TacticsBoard team={team} />;
 }
