@@ -19,7 +19,9 @@ import { Pill } from './Pill';
 import { PitchSvg } from './PitchSvg';
 import { RosterTable } from './RosterTable';
 import { DEFAULT_SKIN, ThemeContext, hcOf, tierColorOf } from './theme';
-import { attackerSlot } from './utils';
+import {
+  attackerSlot, clampInfoPanelWidth, INFO_PANEL_WIDTH_VAR,
+} from './utils';
 
 export { DEFAULT_SKIN } from './theme';
 
@@ -81,22 +83,43 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
   const [infoView, setInfoView] = React.useState('roster');
   const [infoWidth, setInfoWidth] = React.useState(460);
   const gridRef = React.useRef(/** @type {HTMLDivElement | null} */ (null));
+  const isInfoResizingRef = React.useRef(false);
+
+  React.useLayoutEffect(() => {
+    const grid = gridRef.current;
+    if (!grid || isInfoResizingRef.current) return;
+    grid.style.setProperty(INFO_PANEL_WIDTH_VAR, `${infoWidth}px`);
+  }, [infoWidth]);
 
   const startInfoResize = (e) => {
     e.preventDefault();
     const grid = gridRef.current;
     if (!grid) return;
     const rect = grid.getBoundingClientRect();
+    isInfoResizingRef.current = true;
+    let pendingWidth = infoWidth;
+    let rafId = 0;
+
+    const applyWidth = (clamped) => {
+      pendingWidth = clamped;
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = 0;
+        grid.style.setProperty(INFO_PANEL_WIDTH_VAR, `${pendingWidth}px`);
+      });
+    };
+
     const onMove = (ev) => {
-      const next = rect.right - ev.clientX;
-      const clamped = Math.max(300, Math.min(rect.width - 360, next));
-      setInfoWidth(clamped);
+      applyWidth(clampInfoPanelWidth(rect.right - ev.clientX, rect.width));
     };
     const onUp = () => {
+      if (rafId) cancelAnimationFrame(rafId);
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
       document.body.style.userSelect = '';
       document.body.style.cursor = '';
+      isInfoResizingRef.current = false;
+      setInfoWidth(pendingWidth);
     };
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
@@ -427,7 +450,7 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
       ) : (
         <>
           <div ref={gridRef} style={{ flex: 1, minHeight: 0, display: 'grid',
-            gridTemplateColumns: `minmax(360px, 1fr) 6px ${infoWidth}px`,
+            gridTemplateColumns: `minmax(360px, 1fr) 6px var(${INFO_PANEL_WIDTH_VAR}, 460px)`,
             gap: 1, background: T.hair }}>
             {pitchHalf}
             <div onPointerDown={startInfoResize} role="separator" aria-orientation="vertical"
