@@ -1,7 +1,5 @@
 import React from 'react';
-import {
-  ORDERED, consequenceFor, fmtM, fmtWage, HEALTH_LABEL,
-} from './data';
+import { fmtM, fmtWage, HEALTH_LABEL } from './data';
 
 const withA = (hex, a) => {
   const n = parseInt(hex.slice(1), 16);
@@ -40,11 +38,12 @@ function WageRow({ T, value, onPick }) {
   );
 }
 
-export function SwipeDeck({ T, decisions, decide, idx, setIdx }) {
+export function SwipeDeck({ T, model, decisions, decide, idx, setIdx }) {
+  const ORDERED = model.ordered;
   const total = ORDERED.length;
   const player = ORDERED[idx];
   const d = decisions[player.num] || {};
-  const cons = consequenceFor(player.num);
+  const cons = model.consequenceFor(player.num);
   const back = () => setIdx((i) => Math.max(i - 1, 0));
   const fwd = () => setIdx((i) => Math.min(i + 1, total - 1));
   const keep = () => { decide(player.num, { verdict: 'keep' }); if (!player.expiring) fwd(); };

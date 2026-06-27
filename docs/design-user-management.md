@@ -41,6 +41,9 @@ Instead of scraping, a **generator** produces a full, plausible squad for every 
 - **Nationality → registration category** — each generated player gets a nationality, and `reg`
   (`home` / `eu` / `noneu`) is **derived** from it via an EU-membership map + a "homegrown/Greek"
   rule. This keeps the compliance feature (ADR 0009) meaningful per team.
+- **Per-squad nationality mix (locked):** **5–15 EU**, **3–7 non-EU**, **the rest Greek** (home),
+  chosen per team from the seeded RNG, with home clamped to ≥3 so the homegrown minimum stays
+  satisfiable.
 - **Squad shape** — enough players per position to fill the ten formations with real depth
   (≈22–26 per club), mirroring how the current single team is built.
 - **Stats** — `rating`, `age`, and the finance fields (`wage`, `market_value`, `transfer_fee`,

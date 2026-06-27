@@ -1,6 +1,8 @@
 /*
- * Squad data + domain model (the data seam — see docs/adr/0003 + 0007).
- * Hardcoded for now; later this module is the single place a real data source plugs in.
+ * Domain model + shared constants (the data seam — see docs/adr/0003 + 0007).
+ * Player rosters are no longer hardcoded here — they come from the team seam
+ * (src/data/teams.js), generated per club. This module holds the team-agnostic
+ * pieces every screen shares: position types, formations, and the pure model fns.
  *
  *   reg:  'home' | 'eu' | 'noneu'   — registration category (ADR 0009)
  *   pos:  natural position types     — eligibility, natural tier (ADR 0007)
@@ -12,29 +14,6 @@
  */
 
 export const POSITION_TYPES = ['GK', 'RB', 'CB', 'LB', 'DM', 'CM', 'AM', 'RW', 'LW', 'ST'];
-
-export const ROSTER = [
-  { num: 1,  name: 'Mihalakis',   age: 29, nat: 'GR', reg: 'home',  rating: 4, pos: ['GK'],       pos2: [] },
-  { num: 12, name: 'Okonkwo',     age: 22, nat: 'NG', reg: 'noneu', rating: 3, pos: ['GK'],       pos2: [] },
-  { num: 2,  name: 'Owusu',       age: 27, nat: 'GH', reg: 'noneu', rating: 4, pos: ['RB'],       pos2: ['CB'] },
-  { num: 13, name: 'Lindqvist',   age: 21, nat: 'SE', reg: 'eu',    rating: 3, pos: ['RB'],       pos2: ['LB'] },
-  { num: 4,  name: 'Karras',      age: 30, nat: 'GR', reg: 'home',  rating: 5, pos: ['CB'],       pos2: [] },
-  { num: 14, name: 'Benali',      age: 24, nat: 'FR', reg: 'eu',    rating: 4, pos: ['CB'],       pos2: ['DM'] },
-  { num: 5,  name: 'Achterberg',  age: 28, nat: 'NL', reg: 'eu',    rating: 4, pos: ['CB'],       pos2: ['LB'] },
-  { num: 3,  name: 'Petrović',    age: 26, nat: 'RS', reg: 'noneu', rating: 3, pos: ['LB'],       pos2: ['CB'] },
-  { num: 22, name: 'Costa',       age: 22, nat: 'BR', reg: 'noneu', rating: 3, pos: ['LB'],       pos2: ['RB'] },
-  { num: 6,  name: 'Sælen',       age: 27, nat: 'NO', reg: 'eu',    rating: 4, pos: ['DM'],       pos2: ['CM'] },
-  { num: 15, name: 'Ortíz',       age: 26, nat: 'AR', reg: 'noneu', rating: 3, pos: ['DM'],       pos2: ['CM'] },
-  { num: 8,  name: 'Papadakis',   age: 25, nat: 'GR', reg: 'home',  rating: 4, pos: ['CM'],       pos2: ['DM', 'AM'] },
-  { num: 16, name: 'Tanaka',      age: 23, nat: 'JP', reg: 'noneu', rating: 4, pos: ['CM'],       pos2: ['DM'] },
-  { num: 10, name: 'Vasconcelos', age: 24, nat: 'PT', reg: 'eu',    rating: 5, pos: ['AM', 'CM'], pos2: [] },
-  { num: 17, name: 'Forsberg',    age: 27, nat: 'SE', reg: 'eu',    rating: 4, pos: ['AM'],       pos2: ['CM'] },
-  { num: 7,  name: 'Aritz',       age: 26, nat: 'ES', reg: 'eu',    rating: 4, pos: ['RW'],       pos2: ['ST', 'LW'] },
-  { num: 11, name: 'Diatta',      age: 25, nat: 'SN', reg: 'noneu', rating: 4, pos: ['LW'],       pos2: ['RW', 'ST'] },
-  { num: 9,  name: 'Brennan',     age: 28, nat: 'IE', reg: 'eu',    rating: 5, pos: ['ST'],       pos2: [] },
-  { num: 20, name: 'Mensah',      age: 25, nat: 'GH', reg: 'noneu', rating: 4, pos: ['ST'],       pos2: ['AM'] },
-];
-export const byNum = Object.fromEntries(ROSTER.map((p) => [p.num, p]));
 
 const s = (id, label, type, left, top) => ({ id, label, type, left, top });
 
@@ -106,6 +85,8 @@ export const FORMATIONS = {
 };
 export const FORMATION_NAMES = Object.keys(FORMATIONS);
 
+// Default registration rule set (Greek SL). The per-league canonical source is
+// src/data/league.js; callers pass the team's rules into complianceOf, this is the fallback.
 export const LIMITS = { noneu: { kind: 'max', value: 8 }, home: { kind: 'min', value: 3 } };
 
 export const PLACEHOLDER_NEWS = [
@@ -171,7 +152,7 @@ export function effectiveStarterNum(depth, slotId, leaving) {
   return x ? x.num : null;
 }
 
-export function complianceOf(roster, leaving) {
+export function complianceOf(roster, leaving, rules = LIMITS) {
   const live = roster.filter((p) => !leaving.has(p.num));
   const count = (reg) => live.filter((p) => p.reg === reg).length;
   const noneu = count('noneu');
@@ -181,7 +162,7 @@ export function complianceOf(roster, leaving) {
       ? n > lim.value ? 'over' : n === lim.value ? 'at' : 'ok'
       : n < lim.value ? 'under' : 'ok';
   return {
-    noneu: { n: noneu, lim: LIMITS.noneu, state: state(noneu, LIMITS.noneu) },
-    home: { n: home, lim: LIMITS.home, state: state(home, LIMITS.home) },
+    noneu: { n: noneu, lim: rules.noneu, state: state(noneu, rules.noneu) },
+    home: { n: home, lim: rules.home, state: state(home, rules.home) },
   };
 }

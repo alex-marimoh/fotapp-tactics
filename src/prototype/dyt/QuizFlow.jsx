@@ -5,7 +5,8 @@
 import React from 'react';
 import { DEFAULT_SKIN } from '../../board';
 import { SwipeDeck } from './SwipeDeck';
-import { summaryOf, archetypeOf, crowdCallsOf, fmtM } from './data';
+import { createQuizModel, archetypeOf, fmtM } from './data';
+import { getTeam, DEFAULT_TEAM_SLUG } from '../../data/teams';
 
 // ---- shared bits ----------------------------------------------------------
 function Wordmark({ T }) {
@@ -60,13 +61,13 @@ function Intro({ T, total, onStart }) {
 // ===========================================================================
 // Play — the swipe deck (variant A), with a finish bar
 // ===========================================================================
-function Play({ T, decisions, decide, idx, setIdx, summary, onFinish }) {
+function Play({ T, model, decisions, decide, idx, setIdx, summary, onFinish }) {
   const done = summary.decided === summary.total;
   const started = summary.decided > 0;
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div style={{ flex: 1, minHeight: 0 }}>
-        <SwipeDeck T={T} decisions={decisions} decide={decide} idx={idx} setIdx={setIdx} />
+        <SwipeDeck T={T} model={model} decisions={decisions} decide={decide} idx={idx} setIdx={setIdx} />
       </div>
       {started && (
         <div style={{ flexShrink: 0, padding: '12px 16px', borderTop: `1px solid ${T.hair}`, display: 'flex', justifyContent: 'center', background: T.bg }}>
@@ -113,9 +114,9 @@ function CallRow({ T, call }) {
     </div>
   );
 }
-function Result({ T, decisions, summary, onApply, onRestart }) {
+function Result({ T, model, decisions, summary, onApply, onRestart }) {
   const arch = archetypeOf(summary);
-  const calls = crowdCallsOf(decisions);
+  const calls = model.crowdCallsOf(decisions);
   const agreed = calls.filter((c) => c.agrees).length;
   const contrarian = calls.filter((c) => !c.agrees);
   const showCalls = (contrarian.length ? contrarian : calls).slice(0, 3);
@@ -157,16 +158,17 @@ function Result({ T, decisions, summary, onApply, onRestart }) {
 // ===========================================================================
 // Host — phase machine + ribbon
 // ===========================================================================
-export function QuizFlow() {
+export function QuizFlow({ team = getTeam(DEFAULT_TEAM_SLUG) }) {
   const T = DEFAULT_SKIN;
+  const model = React.useMemo(() => createQuizModel(team), [team]);
   const [phase, setPhase] = React.useState('intro'); // 'intro' | 'play' | 'result'
   const [decisions, setDecisions] = React.useState({});
   const [idx, setIdx] = React.useState(0);
   const decide = React.useCallback((num, patch) => setDecisions((d) => ({ ...d, [num]: { ...d[num], ...patch } })), []);
-  const summary = React.useMemo(() => summaryOf(decisions), [decisions]);
+  const summary = React.useMemo(() => model.summaryOf(decisions), [model, decisions]);
 
   const restart = () => { setDecisions({}); setIdx(0); setPhase('intro'); };
-  const goBoard = () => { window.location.search = ''; };
+  const goBoard = () => { window.location.search = `?team=${team.slug}`; };
 
   return (
     <div style={{ width: '100%', height: '100vh', background: T.bg, color: T.text, fontFamily: T.font, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -175,7 +177,7 @@ export function QuizFlow() {
         <button onClick={goBoard} style={{ border: 'none', background: 'transparent', padding: 0, cursor: 'pointer' }}>
           <Wordmark T={T} />
         </button>
-        <span style={{ fontSize: 13, opacity: 0.55, fontWeight: 600 }}>Squad quiz</span>
+        <span style={{ fontSize: 13, opacity: 0.55, fontWeight: 600 }}>Squad quiz · {team.name}</span>
         {phase === 'play' && (
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
             <Chip T={T} label="War chest" value={fmtM(summary.warChest)} color={T.solid} />
@@ -192,8 +194,8 @@ export function QuizFlow() {
 
       <div style={{ flex: 1, minHeight: 0 }}>
         {phase === 'intro' && <Intro T={T} total={summary.total} onStart={() => { setIdx(0); setPhase('play'); }} />}
-        {phase === 'play' && <Play T={T} decisions={decisions} decide={decide} idx={idx} setIdx={setIdx} summary={summary} onFinish={() => setPhase('result')} />}
-        {phase === 'result' && <Result T={T} decisions={decisions} summary={summary} onApply={goBoard} onRestart={restart} />}
+        {phase === 'play' && <Play T={T} model={model} decisions={decisions} decide={decide} idx={idx} setIdx={setIdx} summary={summary} onFinish={() => setPhase('result')} />}
+        {phase === 'result' && <Result T={T} model={model} decisions={decisions} summary={summary} onApply={goBoard} onRestart={restart} />}
       </div>
     </div>
   );
