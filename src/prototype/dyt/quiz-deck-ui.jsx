@@ -2,7 +2,8 @@
  * Squad quiz deck UI — trading card + Tinder-style action buttons.
  */
 import { displayNameCard, formatPositions, fmtContractEnd, fmtM, fmtSalaryYear, priceForTier } from './data';
-import { withA, cardBg } from './quiz-shared-utils';
+import { cardBg } from './quiz-shared-utils';
+import { withA, RENEW_TIER_HINT } from '../../lib/format';
 import { FocusProgress, DecisionFlash } from './quiz-shared';
 
 const TIER_OPTS = [
@@ -73,12 +74,6 @@ export function TierBlock({ T, deck, dark = false }) {
   }
   return null;
 }
-
-const RENEW_TIER_HINT = {
-  more: 'A step above current',
-  same: 'Hold the line',
-  less: 'A step below current',
-};
 
 /** Renew tier step — current salary only, no projected amount. */
 export function RenewTierPanel({ T, player, deck, dark = false }) {

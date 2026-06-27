@@ -7,11 +7,12 @@ import {
   FORMATIONS, FORMATION_NAMES, buildDepth, healthOf, POSITION_TYPES, HEALTH_LABEL,
 } from '../../squad-data';
 
-export const SEASON = 2026;
+import { round5 } from '../../lib/format';
+
+export { SEASON } from '../../lib/format';
 
 const ORDER = Object.fromEntries(POSITION_TYPES.map((t, i) => [t, i]));
 const EMPTY = new Set();
-const round5 = (n) => Math.max(0.3, Math.round(n * 2) / 2);
 
 export const FORMATION = FORMATION_NAMES[0]; // '4-3-3' — the lens for depth/gaps
 export const SLOTS = FORMATIONS[FORMATION];
