@@ -2,6 +2,13 @@
 html, body, #root { margin: 0; height: 100%; }
 body { overflow: hidden; }
 
+/* On phones the app reflows into a single scrolling column, so let the page
+   scroll vertically instead of locking it to one viewport. */
+@media (max-width: 720px) {
+  html, body, #root { height: auto; min-height: 100%; }
+  body { overflow-x: hidden; overflow-y: auto; -webkit-text-size-adjust: 100%; }
+}
+
 /* Squad quiz deck */
 @keyframes quiz-focus-enter {
   from { opacity: 0; transform: scale(0.94) translateY(16px); }

@@ -16,6 +16,19 @@ import {
 const REG_LABEL = { home: 'Greek (HG)', eu: 'EU', noneu: 'Non-EU' };
 const EMPTY = new Set();
 
+// Phone-width detector — the wide roster table scrolls horizontally instead of
+// breaking the page on small screens.
+function usePhone(bp = 720) {
+  const [phone, setPhone] = React.useState(() => typeof window !== 'undefined' && window.innerWidth < bp);
+  React.useEffect(() => {
+    const onResize = () => setPhone(window.innerWidth < bp);
+    window.addEventListener('resize', onResize);
+    onResize();
+    return () => window.removeEventListener('resize', onResize);
+  }, [bp]);
+  return phone;
+}
+
 const field = (T) => ({
   background: T.soft, border: `1px solid ${T.hair2}`, color: T.text, fontFamily: 'inherit',
   borderRadius: Math.max(0, T.radius - 4), padding: '8px 10px', fontSize: 13, width: '100%', boxSizing: 'border-box',
@@ -184,6 +197,7 @@ function AdminTeamPicker({ T, team }) {
 
 export function AdminPage({ team }) {
   const T = DEFAULT_SKIN;
+  const phone = usePhone(720);
   const [roster, setRoster] = React.useState(team.roster);
   const [editing, setEditing] = React.useState(null); // { player, originalNum } | null
   const edited = hasRosterEdits(team.slug);
@@ -214,7 +228,7 @@ export function AdminPage({ team }) {
   return (
     <div style={{ width: '100%', minHeight: '100vh', background: T.bg, color: T.text, fontFamily: T.font }}>
       {/* ribbon */}
-      <div style={{ height: 56, display: 'flex', alignItems: 'center', gap: 12, padding: '0 26px', background: T.flat ? T.ribbon[0] : `linear-gradient(90deg,${T.ribbon[0]},${T.ribbon[1]})`, borderBottom: `1px solid ${T.hair}`, position: 'sticky', top: 0, zIndex: 30 }}>
+      <div style={{ minHeight: 56, display: 'flex', alignItems: 'center', gap: 12, rowGap: 8, flexWrap: 'wrap', padding: phone ? '8px 14px' : '0 26px', background: T.flat ? T.ribbon[0] : `linear-gradient(90deg,${T.ribbon[0]},${T.ribbon[1]})`, borderBottom: `1px solid ${T.hair}`, position: 'sticky', top: 0, zIndex: 30 }}>
         <span style={{ fontWeight: 850, fontSize: 19, letterSpacing: '-.02em', fontFamily: T.display }}>
           <span style={{ color: T.accent }}>fot</span><span style={{ color: T.accent2 }}>app</span>
         </span>
@@ -223,7 +237,7 @@ export function AdminPage({ team }) {
         <button onClick={() => { window.location.search = `?team=${team.slug}`; }} style={{ marginLeft: 'auto', ...ghostBtn(T) }}>← Back to board</button>
       </div>
 
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 26px' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: phone ? '16px 14px' : '24px 26px' }}>
         <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
           <h1 style={{ margin: 0, fontFamily: T.display, fontSize: 28, fontWeight: 800 }}>{team.name}</h1>
           <span style={{ fontSize: 13, opacity: 0.55 }}>{roster.length} players{edited ? ' · edited' : ''}</span>
@@ -235,8 +249,8 @@ export function AdminPage({ team }) {
           </div>
         </div>
 
-        <div style={{ background: T.panel, border: `1px solid ${T.hair}`, borderRadius: T.radius, overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div style={{ background: T.panel, border: `1px solid ${T.hair}`, borderRadius: T.radius, overflowX: 'auto' }}>
+          <table style={{ width: '100%', minWidth: phone ? 760 : 'auto', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
                 {['#', 'Name', 'Pos', 'Age', 'Nat', 'Reg', '★', 'Value', 'Wage', 'Fee', 'Until', ''].map((h) => (

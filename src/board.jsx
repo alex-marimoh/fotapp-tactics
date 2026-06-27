@@ -94,11 +94,25 @@ function useWide(bp = 1080) {
   return wide;
 }
 
+// True on phone-width screens — drives the single-column, page-scrolling layout.
+// The desktop side-by-side composition (ADR 0005) is untouched above this width.
+function usePhone(bp = 720) {
+  const [phone, setPhone] = React.useState(() => typeof window !== 'undefined' && window.innerWidth < bp);
+  React.useEffect(() => {
+    const onResize = () => setPhone(window.innerWidth < bp);
+    window.addEventListener('resize', onResize);
+    onResize();
+    return () => window.removeEventListener('resize', onResize);
+  }, [bp]);
+  return phone;
+}
+
 export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_SLUG) }) {
   const T = skin;
   const hc = hcOf(T);
   const tierColor = tierColorOf(T);
   const wide = useWide(1080); // landscape pitch + pitch-weighted columns on wide screens
+  const phone = usePhone(720); // single-column, page-scrolling layout on phones
   // Size the pitch to the largest true-proportion (105:68) box that fits — never stretched.
   const pitchWrapRef = React.useRef(null);
   const [pitchBox, setPitchBox] = React.useState({ w: 0, h: 0 });
@@ -205,53 +219,17 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
   const selDepth = depth[selected];
   const selSlot = slots.find((s) => s.id === selected);
 
-  return (
-    <ThemeContext.Provider value={T}>
-    <div style={{ width: '100%', height: '100vh', background: T.bg, color: T.text,
-      fontFamily: T.font,
-      display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-
-      {/* ribbon (branding only) */}
-      <div style={{ height: 56, display: 'flex', alignItems: 'center', gap: 12, padding: '0 26px',
-        background: T.flat ? T.ribbon[0] : `linear-gradient(90deg,${T.ribbon[0]},${T.ribbon[1]})`,
-        borderBottom: `1px solid ${T.hair}`, flexShrink: 0 }}>
-        <span style={{ fontWeight: 850, fontSize: 19, letterSpacing: '-0.02em', fontFamily: T.display }}>
-          <span style={{ color: T.accent }}>fot</span><span style={{ color: T.accent2 }}>app</span>
-        </span>
-        <TeamPicker team={team} />
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button onClick={() => { clearScenario(team.slug); window.location.reload(); }}
-            title="Reset this board to the squad"
-            style={{ padding: '7px 13px', borderRadius: T.pill, border: `1px solid ${T.hair2}`, background: T.soft,
-              color: T.text, fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
-            ↺ Reset
-          </button>
-          <button onClick={() => { window.location.search = `?admin=${team.slug}`; }}
-            style={{ padding: '7px 13px', borderRadius: T.pill, border: `1px solid ${T.hair2}`, background: T.soft,
-              color: T.text, fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
-            Manage squad
-          </button>
-          <button onClick={() => { window.location.search = `?quiz=squad&team=${team.slug}`; }}
-            style={{ padding: '8px 16px', borderRadius: T.pill, border: 'none',
-              background: T.flat ? T.accent : `linear-gradient(90deg,${T.accent},${T.accentDark})`, color: T.onAccent,
-              fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
-            Squad quiz →
-          </button>
-        </div>
-      </div>
-
-      {/* hero: pitch half | info half (pitch widens on wide screens) */}
-      <div style={{ flex: 1, minHeight: 0, display: 'grid',
-        gridTemplateColumns: wide ? 'minmax(0, 1.5fr) minmax(300px, 1fr)' : 'minmax(0, 1fr) minmax(0, 1fr)',
-        gap: 1, background: T.hair }}>
-
-        {/* pitch half — controls live in this view */}
+  // The three composable sections. On desktop they sit pitch | info side-by-side
+  // with the depth drawer pinned below (ADR 0005). On phones the same sections
+  // stack into one scrolling column, with the depth drawer right under the pitch
+  // so tapping a position visibly opens its editor.
+  const pitchHalf = (
         <div style={{ position: 'relative', display: 'flex', flexDirection: 'column',
-          padding: 16, gap: 12, minHeight: 0, minWidth: 0,
+          padding: phone ? 12 : 16, gap: 12, minHeight: 0, minWidth: 0,
           background: T.flat ? T.pitch[1] : `radial-gradient(120% 90% at 50% 0%, ${T.pitch[0]} 0%, ${T.pitch[1]} 55%, ${T.pitch[2]} 100%)` }}>
 
           {/* in-pitch control row */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, flexWrap: 'wrap' }}>
             <div style={{ position: 'relative' }}>
               <button onClick={() => setMenuOpen((o) => !o)}
                 style={{ padding: '8px 16px', borderRadius: T.pill, border: 'none',
@@ -281,7 +259,8 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
           </div>
 
           {/* pitch — portrait when narrow, landscape (attack →) when wide; sized to true 105:68, never stretched */}
-          <div ref={pitchWrapRef} style={{ flex: 1, minHeight: 0, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div ref={pitchWrapRef} style={{ flex: phone ? 'none' : 1, height: phone ? '58vh' : undefined,
+            minHeight: 0, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ position: 'relative', width: pitchBox.w || '100%', height: pitchBox.h || '100%' }}>
             {Array.from({ length: 9 }).map((_, i) => (
               <div key={i} style={{ position: 'absolute', background: i % 2 ? T.soft : 'transparent',
@@ -324,9 +303,11 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
           </div>
           <InfoLegend />
         </div>
+  );
 
-        {/* info half — News / Roster views */}
-        <div style={{ background: T.panel, padding: '16px 20px', overflowY: 'auto',
+  const infoHalf = (
+        /* info half — News / Roster views */
+        <div style={{ background: T.panel, padding: phone ? '14px 14px' : '16px 20px', overflowY: 'auto',
           display: 'flex', flexDirection: 'column', gap: 12, minHeight: 0, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
             {[['news', 'Team news'], ['roster', 'Roster']].map(([k, l]) => (
@@ -363,11 +344,12 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
             <RosterTable roster={roster} />
           )}
         </div>
-      </div>
+  );
 
-      {/* depth drawer */}
-      <div style={{ flexShrink: 0, background: T.panel, borderTop: `1px solid ${T.hair}`,
-        padding: '14px 22px', minHeight: 158 }}>
+  const depthDrawer = (
+        /* depth drawer */
+        <div style={{ flexShrink: 0, background: T.panel, borderTop: `1px solid ${T.hair}`,
+          padding: phone ? '14px 14px' : '14px 22px', minHeight: 158 }}>
         {selDepth ? (
           <div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
@@ -427,7 +409,64 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
             Tap a position on the pitch to see and edit its depth →
           </div>
         )}
+        </div>
+  );
+
+  return (
+    <ThemeContext.Provider value={T}>
+    <div style={{ width: '100%', height: phone ? 'auto' : '100vh', minHeight: '100vh',
+      background: T.bg, color: T.text, fontFamily: T.font,
+      display: 'flex', flexDirection: 'column', overflow: phone ? 'visible' : 'hidden' }}>
+
+      {/* ribbon (branding only) — wraps to two rows on phones */}
+      <div style={{ minHeight: 56, display: 'flex', alignItems: 'center', gap: 12, rowGap: 8,
+        padding: phone ? '8px 14px' : '0 26px', flexWrap: phone ? 'wrap' : 'nowrap',
+        background: T.flat ? T.ribbon[0] : `linear-gradient(90deg,${T.ribbon[0]},${T.ribbon[1]})`,
+        borderBottom: `1px solid ${T.hair}`, flexShrink: 0, position: phone ? 'sticky' : 'static', top: 0, zIndex: 30 }}>
+        <span style={{ fontWeight: 850, fontSize: 19, letterSpacing: '-0.02em', fontFamily: T.display }}>
+          <span style={{ color: T.accent }}>fot</span><span style={{ color: T.accent2 }}>app</span>
+        </span>
+        <TeamPicker team={team} />
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <button onClick={() => { clearScenario(team.slug); window.location.reload(); }}
+            title="Reset this board to the squad"
+            style={{ padding: '7px 13px', borderRadius: T.pill, border: `1px solid ${T.hair2}`, background: T.soft,
+              color: T.text, fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+            ↺ Reset
+          </button>
+          <button onClick={() => { window.location.search = `?admin=${team.slug}`; }}
+            style={{ padding: '7px 13px', borderRadius: T.pill, border: `1px solid ${T.hair2}`, background: T.soft,
+              color: T.text, fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+            Manage squad
+          </button>
+          <button onClick={() => { window.location.search = `?quiz=squad&team=${team.slug}`; }}
+            style={{ padding: '8px 16px', borderRadius: T.pill, border: 'none',
+              background: T.flat ? T.accent : `linear-gradient(90deg,${T.accent},${T.accentDark})`, color: T.onAccent,
+              fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+            Squad quiz →
+          </button>
+        </div>
       </div>
+
+      {phone ? (
+        // Phone: one scrolling column — pitch, then its depth editor, then info.
+        <div style={{ display: 'flex', flexDirection: 'column', background: T.hair, gap: 1 }}>
+          {pitchHalf}
+          {depthDrawer}
+          {infoHalf}
+        </div>
+      ) : (
+        <>
+          {/* hero: pitch half | info half (pitch widens on wide screens) */}
+          <div style={{ flex: 1, minHeight: 0, display: 'grid',
+            gridTemplateColumns: wide ? 'minmax(0, 1.5fr) minmax(300px, 1fr)' : 'minmax(0, 1fr) minmax(0, 1fr)',
+            gap: 1, background: T.hair }}>
+            {pitchHalf}
+            {infoHalf}
+          </div>
+          {depthDrawer}
+        </>
+      )}
 
       {adding && (
         <AddModal
@@ -708,6 +747,7 @@ function RosterTable({ roster }) {
       )}
 
       {rows.length ? (
+        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
@@ -735,6 +775,7 @@ function RosterTable({ roster }) {
             ))}
           </tbody>
         </table>
+        </div>
       ) : (
         <div style={{ opacity: 0.5, fontSize: 13, padding: '16px 4px', textAlign: 'center' }}>No players match.</div>
       )}
