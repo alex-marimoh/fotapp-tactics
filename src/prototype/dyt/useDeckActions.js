@@ -2,14 +2,14 @@
  * PROTOTYPE — shared keep/drop/renew state machine for quiz play variants.
  */
 import React from 'react';
-import { ORDERED, priceForTier, wageForTier } from './data';
+import { priceForTier, wageForTier } from './data';
 
 /**
- * @param {{ decisions: object, decide: Function, idx: number, setIdx: Function }} props
+ * @param {{ ordered: object[], decisions: object, decide: Function, idx: number, setIdx: Function }} props
  */
-export function useDeckActions({ decisions, decide, idx, setIdx }) {
-  const total = ORDERED.length;
-  const player = ORDERED[idx];
+export function useDeckActions({ ordered, decisions, decide, idx, setIdx }) {
+  const total = ordered.length;
+  const player = ordered[idx];
   const d = decisions[player.num] || {};
 
   const [pending, setPending] = React.useState(null);

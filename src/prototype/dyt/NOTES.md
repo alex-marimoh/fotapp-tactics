@@ -1,21 +1,24 @@
-# Squad quiz — layout prototypes (same skin as A)
+# Renew UI prototype
 
-**Question:** Different ways to place keep/drop/renew actions — not new themes.
+**Question:** When renewing an expiring contract, the card should stay visible — where should Higher / Same / Lower appear?
 
-**Route:** `?prototype=quiz&variant=A` … `H`  
-**Production (no variants):** `?quiz=squad` only
+**Route:** `?quiz=squad&renewVariant=A` (also `B`, `C`)
 
-| ID | Layout approach |
-|----|-----------------|
-| A | Vertical zones on card (↑ Keep / ↓ Drop) — **keep this** |
-| B | Drag card left/right |
-| C | Flanking buttons beside card |
-| D | Bottom bar below card |
-| E | Split tap (subtle left/right halves) |
-| F | Like A + renew viewport ring |
-| G | Horizontal zones on card (← Drop / Keep →) |
-| H | Edge pill buttons at viewport sides |
+| Variant | Label | Idea |
+|---------|-------|------|
+| A | Side panel | Card left, renew slab slides in from the right |
+| B | Drop-down | Card on top; renew panel stacks below (wage pills stay visible) |
+| C | Split spread | Two slabs side-by-side; card scales down slightly |
+
+Salary is **not** repeated in the renew panel — it's already on the card wage pill.
 
 ## Verdict
 
-*(fill in after review)*
+*(pick one — or mix — then fold into `SwipeDeck` / `quiz-deck-ui` and delete this prototype)*
+
+- [ ] A — Side panel
+- [ ] B — Bottom sheet
+- [ ] C — Split spread
+- [ ] Other: ___
+
+**Notes:**

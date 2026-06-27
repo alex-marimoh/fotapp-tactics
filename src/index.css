@@ -34,23 +34,24 @@ body { overflow: hidden; }
   color: var(--flash); animation: quiz-focus-flash 0.42s ease-out both;
 }
 
-/* Layout prototype helpers (same skin as deck) */
-@keyframes quiz-focus-exit-h-keep {
-  to { opacity: 0; transform: translateX(80px) scale(0.92); }
+/* Squad quiz deck — renew sheet animation */
+@keyframes renew-popup-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-@keyframes quiz-focus-exit-h-sell {
-  to { opacity: 0; transform: translateX(-80px) scale(0.92); }
-}
-.quiz-focus-exit-h--keep { animation: quiz-focus-exit-h-keep 0.38s ease-in forwards; }
-.quiz-focus-exit-h--sell { animation: quiz-focus-exit-h-sell 0.38s ease-in forwards; }
+.renew-popup--sheet { animation: renew-popup-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
-.quiz-swipe-stamp {
-  position: absolute; top: 28%; font-family: "Oswald", sans-serif;
-  font-size: clamp(28px, 6vw, 44px); font-weight: 800; letter-spacing: .08em;
-  border: 3px solid; padding: 4px 12px; border-radius: 8px; pointer-events: none; z-index: 2;
+@keyframes renew-popup-side {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
 }
-.quiz-swipe-stamp--drop { left: 8%; transform: rotate(-12deg); }
-.quiz-swipe-stamp--keep { right: 8%; transform: rotate(12deg); }
+.renew-popup--side { animation: renew-popup-side 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+@keyframes renew-popup-spread {
+  from { opacity: 0; transform: translateX(-12px) scale(0.94); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
+.renew-popup--spread { animation: renew-popup-spread 0.32s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
 @keyframes proto-renew-pulse {
   0% { box-shadow: inset 0 0 0 0 transparent; }

@@ -43,8 +43,8 @@ function Intro({ T, total, onStart, last }) {
       </p>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center', marginTop: 4 }}>
         {step(`${total}`, T.accent, 'players')}
-        {step('↑', T.solid, 'Keep')}
-        {step('↓', T.gap, 'Drop')}
+        {step('♥', T.solid, 'Keep')}
+        {step('✕', T.gap, 'Drop')}
       </div>
       <button onClick={onStart} style={{ ...primaryBtn(T), marginTop: 8, padding: '15px 34px', fontSize: 16 }}>Start the quiz →</button>
       {last && (
