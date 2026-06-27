@@ -39,7 +39,7 @@ export function AddModal({ slot, depth, roster, tab, setTab, form, setForm, onPi
       <div style={{ padding: '16px 18px', borderBottom: `1px solid ${T.hair}`,
         display: 'flex', alignItems: 'center', gap: 10 }}>
         <span id={titleId} style={{ fontSize: 15, fontWeight: 800, fontFamily: T.display }}>Add depth at {slot.label}</span>
-        <span style={{ fontSize: 11, opacity: 0.5 }}>({slot.type})</span>
+        <span style={{ fontSize: 11, color: T.textMuted }}>({slot.type})</span>
         <button type="button" onClick={onClose} aria-label="Close dialog" style={{ marginLeft: 'auto', background: 'transparent', border: 'none',
           color: T.text, fontSize: 20, cursor: 'pointer', lineHeight: 1 }}>×</button>
       </div>
@@ -61,14 +61,14 @@ export function AddModal({ slot, depth, roster, tab, setTab, form, setForm, onPi
                 style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', cursor: 'pointer',
                   background: T.soft, border: `1px solid ${T.hair}`, borderRadius: Math.max(0, T.radius - 2),
                   color: T.text, fontFamily: 'inherit', textAlign: 'left' }}>
-                <span style={{ fontSize: 12, opacity: 0.5, width: 24 }}>#{p.num}</span>
+                <span style={{ fontSize: 12, color: T.textMuted, width: 24 }}>#{p.num}</span>
                 <span style={{ flex: 1, fontSize: 14, fontWeight: 700 }}>{p.name}</span>
                 <span style={{ fontSize: 11, opacity: 0.6 }}>Age {p.age} · ★{p.rating} · {p.pos.join('/')}</span>
                 <span style={{ fontSize: 10, fontWeight: 800, padding: '2px 8px', borderRadius: T.pill,
                   background: `${tierColor[tier]}22`, color: tierColor[tier] }}>{TIER_LABEL[tier]}</span>
               </button>
             ))}
-            {candidates.length === 0 && <div style={{ opacity: 0.5, fontSize: 13 }}>Everyone's already in this chart.</div>}
+            {candidates.length === 0 && <div style={{ color: T.textMuted, fontSize: 13 }}>Everyone's already in this chart.</div>}
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

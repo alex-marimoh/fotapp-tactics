@@ -265,7 +265,7 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
             {infoView === 'news'
               ? <span style={{ fontSize: 10, fontWeight: 700, color: T.accent2, marginLeft: 6,
                   border: `1px solid ${T.accent2}`, borderRadius: T.pill, padding: '1px 7px' }}>PLACEHOLDER</span>
-              : <span style={{ marginLeft: 'auto', fontSize: 11, opacity: 0.5 }}>{roster.length} players</span>}
+              : <span style={{ marginLeft: 'auto', fontSize: 11, color: T.textMuted }}>{roster.length} players</span>}
           </div>
 
           {infoView === 'news' ? (
@@ -276,13 +276,13 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
                     <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: '0.06em', padding: '2px 7px',
                       borderRadius: T.pill, background: `${n.c}22`, color: n.c }}>{n.tag}</span>
-                    <span style={{ fontSize: 10, opacity: 0.45, marginLeft: 'auto' }}>{n.when}</span>
+                    <span style={{ fontSize: 10, color: T.textMuted, marginLeft: 'auto' }}>{n.when}</span>
                   </div>
                   <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.3 }}>{n.head}</div>
                   <div style={{ fontSize: 12, opacity: 0.6, marginTop: 3, lineHeight: 1.4 }}>{n.body}</div>
                 </div>
               ))}
-              <div style={{ marginTop: 'auto', fontSize: 11, opacity: 0.4, lineHeight: 1.5 }}>
+              <div style={{ marginTop: 'auto', fontSize: 11, color: T.textMuted, lineHeight: 1.5 }}>
                 Placeholder panel — swap for news feed, rumors, fixtures, or finances later.
               </div>
             </>
@@ -302,7 +302,7 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
               <span style={{ fontSize: 12, fontWeight: 700, color: hc[healthOf(depth, selected, leaving)] }}>
                 {HEALTH_LABEL[healthOf(depth, selected, leaving)]}
               </span>
-              <span style={{ fontSize: 12, opacity: 0.5 }}>· reorder, sell, or add depth</span>
+              <span style={{ fontSize: 12, color: T.textMuted }}>· reorder, sell, or add depth</span>
             </div>
             <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4, minHeight: 132, alignItems: 'stretch' }}>
               {[selDepth.starter, ...selDepth.backups].filter(Boolean).map((o, i) => {
@@ -349,7 +349,7 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
           </div>
         ) : (
           <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            opacity: 0.55, fontSize: 14 }}>
+            color: T.textMuted, fontSize: 14 }}>
             Tap a position on the pitch to see and edit its depth →
           </div>
         )}

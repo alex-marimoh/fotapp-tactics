@@ -52,7 +52,7 @@ export function AccountChip({ T }) {
   return (
     <>
       <button type="button" onClick={() => setOpen(true)} style={chipBtn} title="Account">
-        <span style={{ opacity: 0.55 }}>●</span>
+        <span style={{ color: T.textMuted }}>●</span>
         {label}
       </button>
       <ModalDialog
@@ -73,7 +73,7 @@ export function AccountChip({ T }) {
             ? 'You are signed in anonymously. Upgrade to save across devices.'
             : `Signed in${user?.email ? ` as ${user.email}` : ''}.`}
         </p>
-        <label style={{ display: 'block', fontSize: 11, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', opacity: 0.5, marginBottom: 6 }}>
+        <label style={{ display: 'block', fontSize: 11, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: T.textMuted, marginBottom: 6 }}>
           Email magic link
         </label>
         <input

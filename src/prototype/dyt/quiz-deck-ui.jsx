@@ -16,9 +16,10 @@ export function TierPicker({ T, amountLabel, amount, selected, onSelect, onConfi
   const hair = dark ? 'rgba(255,255,255,.15)' : T.hair2;
   const soft = dark ? 'rgba(255,255,255,.08)' : T.soft;
   const text = dark ? '#f4f6fa' : T.text;
+  const muted = dark ? T.textMutedOnDark : T.textMuted;
   return (
     <div style={{ marginTop: 4, color: text }}>
-      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', opacity: 0.5, marginBottom: 8 }}>
+      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: muted, marginBottom: 8 }}>
         {amountLabel}
       </div>
       <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 12, fontVariantNumeric: 'tabular-nums' }}>{amount}</div>
@@ -49,7 +50,7 @@ export function TierPicker({ T, amountLabel, amount, selected, onSelect, onConfi
       >{confirmLabel}</button>
       <button type="button" onClick={onBack} style={{
         marginTop: 8, width: '100%', padding: '6px 0', border: 'none', background: 'transparent',
-        cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 600, color: text, opacity: 0.45,
+        cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 600, color: muted,
       }}>← Back</button>
     </div>
   );
@@ -81,6 +82,7 @@ export function RenewTierPanel({ T, player, deck, dark = false }) {
   const hair = dark ? 'rgba(255,255,255,.15)' : T.hair2;
   const soft = dark ? 'rgba(255,255,255,.08)' : T.soft;
   const text = dark ? '#f4f6fa' : T.text;
+  const muted = dark ? T.textMutedOnDark : T.textMuted;
   const tierBtn = (k, label) => (
     <button
       key={k}
@@ -97,19 +99,19 @@ export function RenewTierPanel({ T, player, deck, dark = false }) {
 
   return (
     <div style={{ color: text }}>
-      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', opacity: 0.5, marginBottom: 8 }}>
+      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: muted, marginBottom: 8 }}>
         Current salary
       </div>
       <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 4, fontVariantNumeric: 'tabular-nums' }}>
         {fmtSalaryYear(player.wage)}
       </div>
-      <div style={{ fontSize: 11, opacity: 0.45, marginBottom: 14 }}>New deal · vs current</div>
+      <div style={{ fontSize: 11, color: muted, marginBottom: 14 }}>New deal · vs current</div>
       <div style={{ display: 'flex', gap: 6 }}>
         {tierBtn('more', 'Higher')}
         {tierBtn('same', 'Same')}
         {tierBtn('less', 'Lower')}
       </div>
-      <div style={{ fontSize: 11, opacity: 0.5, marginTop: 10, minHeight: 16, fontStyle: 'italic' }}>
+      <div style={{ fontSize: 11, color: muted, marginTop: 10, minHeight: 16, fontStyle: 'italic' }}>
         {RENEW_TIER_HINT[tier]}
       </div>
       <button
@@ -124,7 +126,7 @@ export function RenewTierPanel({ T, player, deck, dark = false }) {
       >Confirm renew →</button>
       <button type="button" onClick={cancelPending} style={{
         marginTop: 8, width: '100%', padding: '6px 0', border: 'none', background: 'transparent',
-        cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 600, color: text, opacity: 0.45,
+        cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 600, color: muted,
       }}>← Back</button>
     </div>
   );
@@ -249,7 +251,7 @@ export function TradingCardView({ T, deck, renewLayout = 'swap' }) {
         <div style={{ position: 'relative', padding: inFlow ? '18px 16px 16px' : '14px 16px 16px' }}>
           {renewInCard && (
             <>
-              <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.14em', opacity: 0.5 }}>NEW DEAL</span>
+              <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.14em', color: T.textMutedOnDark }}>NEW DEAL</span>
               <div style={{
                 marginTop: 6, marginBottom: 16, textAlign: 'center',
                 fontFamily: T.display, fontSize: 18, fontWeight: 800,
@@ -259,7 +261,7 @@ export function TradingCardView({ T, deck, renewLayout = 'swap' }) {
           )}
           {pending === 'drop' && (
             <>
-              <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.14em', opacity: 0.5 }}>DROP PLAYER</span>
+              <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.14em', color: T.textMutedOnDark }}>DROP PLAYER</span>
               <div style={{
                 marginTop: 6, marginBottom: 16, textAlign: 'center',
                 fontFamily: T.display, fontSize: 18, fontWeight: 800,
@@ -269,7 +271,7 @@ export function TradingCardView({ T, deck, renewLayout = 'swap' }) {
           )}
           {!inFlow && (
             <>
-              <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.14em', opacity: 0.5 }}>SQUAD CARD</span>
+              <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.14em', color: T.textMutedOnDark }}>SQUAD CARD</span>
               <div style={{
                 margin: '20px auto 14px', width: 120, height: 120, borderRadius: '50%',
                 background: `radial-gradient(circle at 30% 25%, ${withA(T.accent, 0.5)}, #0a0e14)`,

@@ -1,0 +1,23 @@
+/**
+ * Global keyboard focus indicator (#14).
+ * :focus-visible shows a ring for keyboard users only; mouse clicks stay unchanged.
+ */
+
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid #1463ff;
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid #1463ff;
+  outline-offset: 2px;
+}
