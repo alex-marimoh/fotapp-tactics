@@ -28,7 +28,7 @@ export function bootStore() {
   return bootPromise;
 }
 
-export { DEFAULT_TEAM_SLUG, getLeagueRules } from './teams';
+export { DEFAULT_TEAM_SLUG, getLeagueRules } from './teamMeta';
 
 export const getTeams = (...a) => backend.getTeams(...a);
 export const getTeam = (...a) => backend.getTeam(...a);

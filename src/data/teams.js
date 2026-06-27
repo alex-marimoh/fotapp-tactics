@@ -1,37 +1,42 @@
 /*
  * Team accessor seam (docs/design-user-management.md §2, ADR 0003).
- * The ONE place team/roster data enters the app. Today it builds teams from the
- * generator; later a Supabase-backed store can satisfy the same interface
- * (getTeams / getTeam / getLeagueRules) without any screen changing.
+ * The ONE place team/roster data enters the app for the offline backend.
+ * Rosters are generated lazily on first access; metadata lives in teamMeta.js.
  */
-import { GREEK_SUPER_LEAGUE } from './league';
 import { generateRoster } from './generator';
+import {
+  DEFAULT_TEAM_SLUG,
+  getLeagueRules,
+  getClubBySlug,
+  getTeamsMeta,
+  clubMeta,
+} from './teamMeta';
 
-// Build every club's full team once (generated rosters are deterministic per slug).
-const TEAMS = GREEK_SUPER_LEAGUE.clubs.map((club) => ({
-  slug: club.slug,
-  name: club.name,
-  short: club.short,
-  league: GREEK_SUPER_LEAGUE.id,
-  colors: club.colors,
-  rules: GREEK_SUPER_LEAGUE.rules,
-  roster: generateRoster(club),
-}));
+export { DEFAULT_TEAM_SLUG, getLeagueRules };
 
-const BY_SLUG = Object.fromEntries(TEAMS.map((t) => [t.slug, t]));
+/** @type {Map<string, import('../squad-data').Player[]>} */
+const rosterCache = new Map();
 
-export const DEFAULT_TEAM_SLUG = TEAMS[0].slug;
+/** @param {ReturnType<typeof getClubBySlug>} club */
+function rosterForClub(club) {
+  if (!rosterCache.has(club.slug)) {
+    rosterCache.set(club.slug, generateRoster(club));
+  }
+  return rosterCache.get(club.slug);
+}
 
 // Lightweight list for pickers (no roster payload).
 export function getTeams() {
-  return TEAMS.map(({ slug, name, short, league, colors }) => ({ slug, name, short, league, colors }));
+  return getTeamsMeta();
 }
 
 // Full team (with roster) for the board and quiz.
 export function getTeam(slug) {
-  return BY_SLUG[slug] || BY_SLUG[DEFAULT_TEAM_SLUG];
-}
-
-export function getLeagueRules() {
-  return GREEK_SUPER_LEAGUE.rules;
+  const club = getClubBySlug(slug);
+  return {
+    ...clubMeta(club),
+    rules: getLeagueRules(),
+    roster: rosterForClub(club),
+    strength: club.strength,
+  };
 }

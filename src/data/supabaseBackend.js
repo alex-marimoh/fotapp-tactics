@@ -7,7 +7,7 @@ import { ensureSupabaseClient, getSupabase } from '../supabaseClient';
 import { showToast } from '../ui/toast';
 import { GREEK_SUPER_LEAGUE } from './league';
 import { generateRoster, SEASON } from './generator';
-import { getLeagueRules, DEFAULT_TEAM_SLUG } from './teams';
+import { getLeagueRules, DEFAULT_TEAM_SLUG } from './teamMeta';
 
 export { getLeagueRules, DEFAULT_TEAM_SLUG };
 
