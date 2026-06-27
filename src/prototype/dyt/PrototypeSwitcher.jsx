@@ -14,13 +14,12 @@ const LABELS = {
  * @param {{ param: string, variants: string[], current: string, onCycle: (next: string) => void, hint?: string }} props
  */
 export function PrototypeSwitcher({ param, variants, current, onCycle, hint }) {
-  if (import.meta.env.PROD) return null;
-
   const idx = variants.indexOf(current);
   const prev = variants[(idx - 1 + variants.length) % variants.length];
   const next = variants[(idx + 1) % variants.length];
 
   React.useEffect(() => {
+    if (import.meta.env.PROD) return;
     const onKey = (e) => {
       if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -35,6 +34,8 @@ export function PrototypeSwitcher({ param, variants, current, onCycle, hint }) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [prev, next, onCycle]);
+
+  if (import.meta.env.PROD) return null;
 
   const label = LABELS[current] ?? current;
 
@@ -86,20 +87,3 @@ const arrowBtn = {
   background: 'rgba(255,255,255,.08)', color: '#fff', cursor: 'pointer', fontSize: 14,
   fontFamily: 'inherit', lineHeight: 1,
 };
-
-/**
- * @param {string} param
- * @returns {string | null}
- */
-export function readPrototypeVariant(param) {
-  const v = new URLSearchParams(window.location.search).get(param);
-  if (!v) return null;
-  return v.toUpperCase();
-}
-
-/** @param {string} param @param {string} value */
-export function setPrototypeVariant(param, value) {
-  const url = new URL(window.location.href);
-  url.searchParams.set(param, value);
-  window.history.replaceState(null, '', url.toString());
-}

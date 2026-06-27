@@ -5,7 +5,7 @@
  * Reachable at ?admin=<slug>; writes go through the store (localStorage for now).
  */
 import React from 'react';
-import { DEFAULT_SKIN } from '../board';
+import { DEFAULT_SKIN } from '../default-skin';
 import { POSITION_TYPES, complianceOf } from '../squad-data';
 import { ALL_NATIONS, regForNat } from '../data/names';
 import { SEASON } from '../data/generator';

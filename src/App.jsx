@@ -1,4 +1,5 @@
-import { TacticsBoard, DEFAULT_SKIN } from './board';
+import { TacticsBoard } from './board';
+import { DEFAULT_SKIN } from './default-skin';
 import { QuizFlow } from './prototype/dyt/QuizFlow';
 import { AdminPage } from './admin/AdminPage';
 import { getTeam, DEFAULT_TEAM_SLUG, isAdminFor } from './data/store';

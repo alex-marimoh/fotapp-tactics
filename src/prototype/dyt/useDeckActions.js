@@ -18,14 +18,6 @@ export function useDeckActions({ ordered, decisions, decide, idx, setIdx }) {
   const [exit, setExit] = React.useState(null);
   const [fx, setFx] = React.useState(null);
 
-  React.useEffect(() => {
-    setPending(null);
-    setTier('same');
-    setFlash(null);
-    setExit(null);
-    setFx(null);
-  }, [player.num]);
-
   const advance = React.useCallback(() => {
     setPending(null);
     setTier('same');
