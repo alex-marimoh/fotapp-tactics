@@ -1,6 +1,6 @@
-# Design — User management, persistence & multi-team
+# Design — User management, persistence, multi-team & admin
 
-- Status: **draft for review** (will split into ADRs once decisions settle)
+- Status: **draft / plan** (will split into ADRs as pieces land)
 - Date: 2026-06-27
 - Supersedes the "ephemeral is fine" stance of [ADR 0010](adr/0010-persistence-ephemeral-v1.md)
   for the next phase; builds on the data seam of [ADR 0003](adr/0003-data-hardcoded-now-real-later.md),
@@ -11,175 +11,230 @@
 
 The MVP today is **one hardcoded team, no accounts, in-memory only**. This phase grows it into:
 
-1. **Multiple teams** — Greek Super League clubs — selectable on the board (home) and in the quiz.
-2. **User accounts** — Supabase Auth.
-3. **Persistence** — each user's saved tactics (board scenarios) and quiz results, saved and
-   re-displayed across sessions and devices.
-4. **Real crowd votes** — the quiz's "% of fans would keep/sell" stops being a stub and becomes
-   an aggregate of real user decisions.
+1. **Multiple teams** — **all Greek Super League** clubs, selectable on the board (home) and in the
+   quiz. Rosters are **auto-generated** (generated names + synthesized stats), not scraped.
+2. **An admin / power-user tool** — a per-team management page to add/edit/remove players and set
+   their details (contract end, wage, market value, transfer fee, EU/non-EU registration, rating,
+   positions).
+3. **User accounts** — Supabase Auth (anonymous-first, upgradeable).
+4. **Persistence** — each user's saved tactics (board scenarios) and quiz results, saved and
+   re-displayed across sessions and devices; **and the rosters themselves**, since admins edit them.
 
-Decisions locked with the author: **Supabase** (accounts + DB), **Greek Super League** for rosters.
+### Decisions locked with the author (2026-06-27)
+
+- **Backend:** Supabase (accounts + DB). **The Supabase project link is pending** — the author will
+  provide it later, so everything is built behind a swappable data seam that runs on a local backend
+  until the keys exist (see §7).
+- **League:** Greek Super League, **all teams**.
+- **Rosters:** **generated**, not scraped — synthesize plausible names + stats per team.
+- **Admin:** build a per-team admin page for manual roster management.
+- **Crowd votes:** **deferred** to a later phase. The quiz keeps its deterministic `crowdKeepPct`
+  stub for now.
 
 ---
 
-## 1. Data seam: one team → many (no change to board/quiz logic)
+## 1. Rosters: generated, then editable (not scraped)
 
-`squad-data.js` currently exports module-level constants (`ROSTER`, `FORMATIONS`, `LIMITS`) that
-`board.jsx` and the quiz import directly. We generalize the seam **without changing the player /
-slot / depth shapes**, so all the existing logic (`buildDepth`, `healthOf`, `complianceOf`,
-`tierFor`, the whole board and quiz) is untouched.
+Instead of scraping, a **generator** produces a full, plausible squad for every Greek SL club:
 
-Introduce a `Team` record:
+- **Names** — drawn from a Greek-name pool plus a foreign pool (so nationality mix is realistic).
+- **Nationality → registration category** — each generated player gets a nationality, and `reg`
+  (`home` / `eu` / `noneu`) is **derived** from it via an EU-membership map + a "homegrown/Greek"
+  rule. This keeps the compliance feature (ADR 0009) meaningful per team.
+- **Squad shape** — enough players per position to fill the ten formations with real depth
+  (≈22–26 per club), mirroring how the current single team is built.
+- **Stats** — `rating`, `age`, and the finance fields (`wage`, `market_value`, `transfer_fee`,
+  `contract_end`) are synthesized from rating/age, the same approach the quiz's `data.js` already
+  uses. Invented, but internally consistent.
+
+The generator is **deterministic per team** (seeded by slug) so a club looks the same every run until
+an admin edits it. It serves two roles: the **seed** that populates the database, and the **offline
+fallback** before Supabase is connected.
+
+> This changes the earlier "keep rosters in code" stance: because admins **edit** rosters, players are
+> editable persisted records, not constants. The generator is the *source of the seed*, the database
+> is the *source of truth* once seeded.
+
+## 2. Data seam: one team → many (board/quiz logic unchanged)
+
+`squad-data.js` currently exports module-level constants (`ROSTER`, `FORMATIONS`, `LIMITS`) imported
+directly by `board.jsx` and the quiz. We generalize **without changing the player / slot / depth
+shapes**, so all existing logic (`buildDepth`, `healthOf`, `complianceOf`, `tierFor`, the board, the
+quiz) is untouched.
 
 ```
-Team = {
-  slug,        // stable id, e.g. 'olympiacos'
-  name,        // 'Olympiacos FC'
-  short,       // 'OLY'
-  league,      // 'greek-super-league'
-  colors,      // { primary, secondary } for kit/skin accents
-  roster,      // Player[]  — the existing player shape, unchanged
+Team = { slug, name, short, league, colors, roster: Player[] }
+Player = {                       // existing shape + first-class finance fields
+  num, name, age, nat, reg,      // reg derived from nat
+  rating, pos[], pos2[],
+  wage, marketValue, transferFee, contractEnd, onLoan?
 }
 ```
 
-- `FORMATIONS`, `POSITION_TYPES`, `tierFor`, `buildDepth`, `healthOf`, `complianceOf` stay shared
-  and team-agnostic.
-- **`LIMITS` moves to the league**, not the module. All Greek SL teams share one rule set, so the
-  rules live on the league and `complianceOf(roster, leaving, rules)` takes the rule set as a
-  parameter instead of importing the global `LIMITS`. (This is also the seam the backlogged
-  "multi-competition quota rule sets" plugs into later.)
-- New accessors — **the one place real data enters** (the ADR 0003 seam):
-  - `getTeams()` → lightweight list (slug, name, short, colors) for pickers.
-  - `getTeam(slug)` → full `Team` with roster.
-  - `getLeagueRules(league)` → the registration rule set.
+- `FORMATIONS`, `POSITION_TYPES`, `tierFor`, `buildDepth`, `healthOf`, `complianceOf` stay shared and
+  team-agnostic.
+- **`LIMITS` moves to the league** (all Greek SL teams share one rule set):
+  `complianceOf(roster, leaving, rules)` takes the rule set as a parameter.
+- Finance fields (`wage`, `marketValue`, `transferFee`, `contractEnd`) become **first-class on the
+  player** rather than derived in the quiz's `data.js`, because the admin page edits them directly.
+  The quiz's derivation functions become the *generator defaults*.
+- The data layer (`store.js`, §7) exposes `getTeams()`, `getTeam(slug)`, `getLeagueRules(league)`.
 
-Hardcoded Greek SL teams now → scraped dataset later → live API even later, all behind the same
-interface. Board and quiz call `getTeam(slug)` and otherwise don't change.
+## 3. Routing / navigation
 
-## 2. Routing / team selection
-
-Routing today is a single `?quiz=squad` query param. We extend it minimally (still query-param
-based, no router library):
+Still query-param based (no router library):
 
 - Board (home): `?team=<slug>` — defaults to a chooser or a default club.
 - Quiz: `?quiz=squad&team=<slug>`.
-- A **team picker** on the home page (the "club picker" deferred in the backlog). The quiz inherits
-  the selected team or offers its own picker.
+- Admin: `?admin=<slug>` (team management page), gated by role (§5).
+- A **team picker** on the home page (the backlog's "club picker").
 
-## 3. Auth & user identity (Supabase)
+## 4. The admin / power-user page
 
-**Anonymous-first, upgrade later.** Keep the friction-free MVP feel: on first visit the user gets a
-Supabase **anonymous session** automatically, so their board edits and quiz results are already being
-saved against a real `user_id`. When they want cross-device sync / a name on the leaderboard, they
-**upgrade the anonymous user** to email magic-link (and/or Google OAuth) — Supabase carries the same
-`user_id` and all their data comes with them. No "lost my work because I didn't sign up" moment.
+A per-team management screen (`?admin=<slug>`) for users with admin / power-user rights:
 
-## 4. What we persist
+- **Roster table** with add / edit / remove player.
+- **Editable fields per player:** name, positions (`pos` / `pos2`), age, nationality (and the derived
+  `reg`, with a manual override), rating, **wage**, **market value**, **transfer fee**, **contract
+  end year**, on-loan flag.
+- **Validation:** position values restricted to `POSITION_TYPES`; numbers bounded; squad-number
+  uniqueness within a team.
+- **Save model:** edits write through the data seam (§7) — to the local backend now, to Supabase once
+  connected. Optimistic UI with a saved indicator.
+- A "regenerate squad" action (re-seed a team from the generator) for quick resets during the demo.
 
-Keep **team/roster reference data in code** (the data seam), and put only **user-generated data** in
-Postgres, keyed by `team_slug` (a string reference into the seam). Rationale: rosters will churn as
-we scrape/refine them; we don't want a migration every time. If we later want server-authoritative
-rosters, the seam can read from `teams`/`players` tables behind the *same* `getTeam()` interface.
+This is the manual-curation path that makes generated data accurate over time without scraping.
 
-### Board scenarios (the saved tactics)
-Per `(user, team)`, the what-if state — this is the "scenario state shape" ADR 0010 anticipated:
+## 5. Auth, roles & identity (Supabase)
 
-```
-state = {
-  formation,                 // e.g. '4-3-3'
-  depthMap,                  // { [formation]: { [slotId]: { starter, backups } } }
-  leaving:  [num, ...],      // players marked as leaving
-  added:    [Player, ...],   // hypothetical signings/youth (when that feature lands)
-}
-```
+**Anonymous-first, upgrade later.** First visit silently creates a Supabase anonymous session, so
+board edits and quiz results already save against a real `user_id`. Upgrading to email magic-link
+(and/or Google OAuth) keeps the same `user_id`, so nothing is lost.
 
-v1: **one autosaved "current" scenario per (user, team)** (debounced autosave). Named/multiple saved
-scenarios stay backlogged, but the schema (a `name` column) already allows them.
+**Roles.**
+- A global `is_admin` flag on the profile (full access to every team's admin page).
+- A `team_admins(user_id, team_slug)` grant table for **per-team power users** (manage one club).
+- Everyone else is a normal user: read rosters, build boards, take quizzes — no roster editing.
 
-### Quiz results
-Per `(user, team, attempt)`, kept as **history** so we can re-display past runs:
-
-```
-{ decisions: { [num]: { verdict, price } }, summary, archetype, created_at }
-```
-
-### Crowd votes (the real payoff)
-The quiz screen already promises "this is where real fan votes plug in." Every saved quiz decision is
-a vote. We aggregate real keep/sell rates per `(team, player)` and feed them back into the result
-screen, replacing the deterministic `crowdKeepPct` stub (which stays as the fallback when a player has
-too few votes).
-
-## 5. Data model (Postgres / Supabase)
+## 6. Data model (Postgres / Supabase)
 
 ```
 profiles
-  id            uuid pk references auth.users(id)
-  display_name  text
-  created_at    timestamptz default now()
+  id           uuid pk references auth.users(id)
+  display_name text
+  is_admin     boolean not null default false
+  created_at   timestamptz default now()
 
-board_scenarios
-  id            uuid pk default gen_random_uuid()
-  user_id       uuid not null references auth.users(id)
-  team_slug     text not null
-  name          text not null default 'current'
-  state         jsonb not null
-  updated_at    timestamptz default now()
-  unique (user_id, team_slug, name)          -- the autosave "current" row upserts here
+teams
+  slug         text pk
+  name         text not null
+  short        text
+  league       text not null default 'greek-super-league'
+  colors       jsonb
+  created_at   timestamptz default now()
 
-quiz_results
-  id            uuid pk default gen_random_uuid()
-  user_id       uuid not null references auth.users(id)
-  team_slug     text not null
-  decisions     jsonb not null
-  summary       jsonb not null
-  archetype     text
-  created_at    timestamptz default now()
+players                                  -- editable roster (admin CRUD target)
+  id           uuid pk default gen_random_uuid()
+  team_slug    text not null references teams(slug) on delete cascade
+  num          int  not null
+  name         text not null
+  age          int
+  nat          text
+  reg          text not null             -- 'home' | 'eu' | 'noneu' (derived, overridable)
+  rating       int
+  pos          text[] not null
+  pos2         text[] not null default '{}'
+  wage         numeric                   -- € k / week
+  market_value numeric                   -- € millions
+  transfer_fee numeric                   -- € millions (asking price)
+  contract_end int                       -- season year
+  on_loan      boolean not null default false
+  updated_at   timestamptz default now()
+  unique (team_slug, num)
+
+team_admins                              -- per-team power users
+  user_id      uuid references auth.users(id)
+  team_slug    text references teams(slug) on delete cascade
+  primary key (user_id, team_slug)
+
+board_scenarios                          -- saved tactics, autosaved per user+team
+  id           uuid pk default gen_random_uuid()
+  user_id      uuid not null references auth.users(id)
+  team_slug    text not null
+  name         text not null default 'current'
+  state        jsonb not null            -- { formation, depthMap, leaving[], added[] }
+  updated_at   timestamptz default now()
+  unique (user_id, team_slug, name)
+
+quiz_results                             -- kept as history
+  id           uuid pk default gen_random_uuid()
+  user_id      uuid not null references auth.users(id)
+  team_slug    text not null
+  decisions    jsonb not null            -- { [num]: { verdict, price } }
+  summary      jsonb not null
+  archetype    text
+  created_at   timestamptz default now()
 ```
 
-**Crowd aggregation:** start with a view derived from `quiz_results.decisions`
-(`player_keep_rates(team_slug, player_num, keep_pct, n)`); normalize into a `quiz_votes` table only
-if aggregation gets slow.
-
 **RLS (row-level security):**
-- `board_scenarios` / `quiz_results`: a user can read/write **only their own rows**
-  (`user_id = auth.uid()`).
-- Crowd aggregates are exposed via a `security definer` view / RPC that returns **only anonymized
-  counts** — never another user's individual decisions.
+- `teams`, `players`: **public read**; **write** only by `is_admin` users or a matching
+  `team_admins` row.
+- `board_scenarios`, `quiz_results`: read/write only where `user_id = auth.uid()`.
+- `profiles`: a user reads/writes their own row; `is_admin` is not self-settable (set by a trusted
+  path / SQL).
 
-## 6. Client integration
+**Crowd votes:** deferred. When it lands, it derives keep/sell rates from `quiz_results.decisions`
+via an anonymized aggregate view/RPC.
 
-- `src/supabaseClient.js` — Supabase client from `import.meta.env.VITE_SUPABASE_URL` /
-  `VITE_SUPABASE_ANON_KEY` (in a gitignored `.env`).
-- `src/store.js` — the persistence module, the single seam for saved data:
-  - `loadScenario(teamSlug)` / `saveScenario(teamSlug, state)` (debounced) — board autosave.
-  - `saveQuizResult(teamSlug, result)` / `listQuizResults(teamSlug)`.
-  - `crowdKeepPct(teamSlug, num)` — now real, falls back to the deterministic stub below a vote
-    threshold.
-- Wiring: `board.jsx` autosaves on state change and loads on mount; the quiz saves on finish and
-  reads real crowd numbers on the result screen.
+## 7. Client integration — the swappable seam (so the Supabase link can come later)
 
-Per ADR 0010 this stays "a clean addition behind the same scenario state shape" — the in-memory board
-keeps working; persistence is layered on, not woven through.
+A single data module with two interchangeable backends so we **build the whole app now and flip the
+backend later**:
+
+- `src/data/generator.js` — deterministic roster generator (names, nationalities → `reg`, stats).
+- `src/data/store.js` — the interface every screen uses:
+  - `getTeams()`, `getTeam(slug)`, `getLeagueRules(league)`
+  - `upsertPlayer(slug, player)`, `deletePlayer(slug, id)`, `regenerateTeam(slug)`  (admin)
+  - `loadScenario(slug)`, `saveScenario(slug, state)`  (board autosave, debounced)
+  - `saveQuizResult(slug, result)`, `listQuizResults(slug)`
+  - `currentUser()`, `signInAnonymously()`, `upgradeAccount(...)`, `isAdminFor(slug)`
+- **Backends:**
+  - `localBackend` — in-memory + `localStorage`, seeded from the generator. **Default until Supabase
+    keys exist.** Lets board, quiz, and the admin page all work and persist per-device today.
+  - `supabaseBackend` — `@supabase/supabase-js` against the tables in §6, selected when
+    `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` are present (gitignored `.env`).
+- Screens never import a backend directly — only `store.js`. Flipping to Supabase is a one-file
+  change plus running the migration + seed.
 
 ---
 
-## Open questions / gaps to resolve before building
+## 8. Implementation plan (sequenced)
 
-1. **Greek SL roster sourcing.** Scraping real rosters is brittle, and the registration category
-   (`home` / `eu` / `noneu`) must be **derived from nationality** — we need a nationality→category
-   map (EU membership list + a "homegrown" definition for Greece). Proposal: scrape only
-   **name / nationality / age / position** and **synthesize rating & market value** (exactly as the
-   current single team does). Accept that ratings are invented for the demo.
-2. **How many teams to start.** All ~14 Super League clubs, or begin with the big four
-   (Olympiacos, Panathinaikos, AEK, PAOK) and expand? Recommend **~4–6 first**, then widen — proves
-   multi-team without a large data job up front.
-3. **Crowd votes now or later.** Ship real aggregation in this phase, or persist user data first and
-   keep the crowd stub one more iteration? Real crowd adds an RLS-safe aggregate view/RPC and an
-   anon-read path.
-4. **Auth UX.** Confirm **anonymous-first → upgrade** (recommended) vs. forcing login up front.
-5. **Supabase provisioning.** Need a project + anon key in `.env`. Decide: create a fresh project via
-   the Supabase tooling, or point at an existing one. (Listing was declined in this session, so this
-   is an explicit setup step, not assumed.)
-6. **Scenario vs. season.** Board scenarios are per-team "current" autosave for v1; named/multiple
-   scenarios and the "age forward a season" what-if remain backlogged but the schema leaves room.
-```
+Each phase is shippable on its own; only Phase 4 needs the Supabase link.
+
+- **Phase 0 — Multi-team seam + generator.** Generalize `squad-data.js`; build the roster generator
+  for all Greek SL clubs; move `LIMITS` to the league; add finance fields to the player. Board + quiz
+  read `getTeam(slug)`; add the team picker and `?team=` routing. *No backend.*
+- **Phase 1 — Persistence seam (local backend).** Add `store.js` with `localBackend`. Wire board
+  autosave (`saveScenario`/`loadScenario`) and quiz result history (`saveQuizResult`/
+  `listQuizResults`). Everything persists per-device via `localStorage`.
+- **Phase 2 — Admin page.** Build `?admin=<slug>` roster management (CRUD + finance/registration
+  editing + regenerate), writing through `store.js`. Role check via `isAdminFor` (local backend
+  treats the device user as admin during dev).
+- **Phase 3 — Supabase wiring (needs the link).** Add `supabaseBackend`, auth (anonymous-first +
+  upgrade), migrations for §6, RLS, roles; run the generator once as the seed. Flip the store backend
+  via env. No screen changes.
+- **Phase 4 — Crowd votes (deferred).** Aggregate `quiz_results` into real keep/sell rates; replace
+  the `crowdKeepPct` stub behind the same call.
+
+## 9. Remaining open questions (small)
+
+1. **Admin access in the live build before roles exist** — for Phase 0–2 the local backend treats the
+   current device user as an admin so the page is usable. Confirm that's fine for the demo (real
+   gating arrives with Supabase in Phase 3).
+2. **Nationality realism** — how much do you care that generated nationalities/league quotas look
+   right vs. just plausible? Affects how rich the name/nationality pools need to be.
+3. **Squad size per club** — fixed (~24) or varied per team? Default: ~24 with small variation.
+4. **Team list** — auto-generate names for clubs too, or use the real ~14 Greek SL club names
+   (Olympiacos, Panathinaikos, AEK, PAOK, …) with generated *players*? Real club names read better;
+   recommend real club names + generated rosters.
