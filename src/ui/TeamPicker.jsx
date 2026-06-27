@@ -1,6 +1,7 @@
 import React from 'react';
 import { getTeams } from '../data/store';
 import { withA } from '../lib/format';
+import { useDismissOnEscape } from './a11y';
 
 /**
  * Club switcher dropdown — navigates via ?team= or ?admin= query param.
@@ -8,6 +9,8 @@ import { withA } from '../lib/format';
  */
 export function TeamPicker({ T, team, param = 'team' }) {
   const [open, setOpen] = React.useState(false);
+  const triggerRef = React.useRef(/** @type {HTMLButtonElement | null} */ (null));
+  const listId = React.useId();
   const teams = getTeams();
   const dot = (c) => ({
     width: 10,
@@ -18,9 +21,16 @@ export function TeamPicker({ T, team, param = 'team' }) {
     border: `1px solid ${T.hair2}`,
   });
 
+  useDismissOnEscape(open, () => setOpen(false), triggerRef);
+
   return (
     <div style={{ position: 'relative' }}>
       <button
+        ref={triggerRef}
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={open ? listId : undefined}
         onClick={() => setOpen((o) => !o)}
         style={{
           display: 'inline-flex',
@@ -39,12 +49,19 @@ export function TeamPicker({ T, team, param = 'team' }) {
       >
         <span style={dot(team.colors?.primary || T.accent)} />
         {team.name}
-        <span style={{ fontSize: 10, opacity: 0.6 }}>▾</span>
+        <span style={{ fontSize: 10, opacity: 0.6 }} aria-hidden="true">▾</span>
       </button>
       {open && (
         <>
-          <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
           <div
+            role="presentation"
+            onClick={() => setOpen(false)}
+            style={{ position: 'fixed', inset: 0, zIndex: 40 }}
+          />
+          <div
+            id={listId}
+            role="listbox"
+            aria-label="Choose team"
             style={{
               position: 'absolute',
               top: '100%',
@@ -64,6 +81,9 @@ export function TeamPicker({ T, team, param = 'team' }) {
             {teams.map((t) => (
               <button
                 key={t.slug}
+                type="button"
+                role="option"
+                aria-selected={t.slug === team.slug}
                 onClick={() => { window.location.search = `?${param}=${t.slug}`; }}
                 style={{
                   display: 'flex',

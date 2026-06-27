@@ -2,6 +2,7 @@ import React from 'react';
 import {
   currentUser, signInWithEmail, signInWithGoogle, signOut, onAuthChange, usesSupabase,
 } from '../data/store';
+import { ModalDialog } from '../ui/ModalDialog';
 import { field, primaryBtn, ghostBtn } from '../ui/styles';
 
 /**
@@ -14,6 +15,7 @@ export function AccountChip({ T }) {
   const [email, setEmail] = React.useState('');
   const [status, setStatus] = React.useState('');
   const [busy, setBusy] = React.useState(false);
+  const titleId = React.useId();
 
   React.useEffect(() => onAuthChange(setUser), []);
 
@@ -53,69 +55,71 @@ export function AccountChip({ T }) {
         <span style={{ opacity: 0.55 }}>●</span>
         {label}
       </button>
-      {open && (
-        <>
-          <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,.35)' }} />
-          <div style={{
-            position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 101,
-            background: T.panel, border: `1px solid ${T.hair2}`, borderRadius: T.radius, padding: 24,
-            width: 'min(400px, calc(100vw - 32px))', boxShadow: '0 16px 48px rgba(0,0,0,.25)', fontFamily: T.font,
-          }}>
-            <h2 style={{ margin: '0 0 4px', fontFamily: T.display, fontSize: 22 }}>Account</h2>
-            <p style={{ margin: '0 0 16px', fontSize: 13, opacity: 0.6 }}>
-              {user?.isAnonymous
-                ? 'You are signed in anonymously. Upgrade to save across devices.'
-                : `Signed in${user?.email ? ` as ${user.email}` : ''}.`}
-            </p>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', opacity: 0.5, marginBottom: 6 }}>
-              Email magic link
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              style={{ ...fieldStyle, marginBottom: 10 }}
-            />
-            <button
-              type="button"
-              disabled={busy || !email.trim()}
-              onClick={() => run(async () => {
-                await signInWithEmail(email.trim());
-                setStatus(user?.isAnonymous
-                  ? 'Check your email to confirm and link this account.'
-                  : 'Magic link sent — check your email.');
-              })}
-              style={{ ...primaryStyle, width: '100%', marginBottom: 10, opacity: busy || !email.trim() ? 0.5 : 1 }}
-            >
-              Send magic link
-            </button>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => run(signInWithGoogle)}
-              style={{ ...ghostStyle, width: '100%', marginBottom: 16 }}
-            >
-              Continue with Google
-            </button>
-            {status && <p style={{ margin: '0 0 12px', fontSize: 12, color: T.accent }}>{status}</p>}
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button type="button" onClick={() => setOpen(false)} style={ghostStyle}>Close</button>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => run(async () => {
-                  await signOut();
-                  setOpen(false);
-                })}
-                style={{ ...ghostStyle, color: T.gap }}
-              >
-                Sign out
-              </button>
-            </div>
-          </div>
-        </>
-      )}
+      <ModalDialog
+        open={open}
+        onClose={() => setOpen(false)}
+        ariaLabel="Account"
+        titleId={titleId}
+        backdropStyle={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,.35)' }}
+        panelStyle={{
+          position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 101,
+          background: T.panel, border: `1px solid ${T.hair2}`, borderRadius: T.radius, padding: 24,
+          width: 'min(400px, calc(100vw - 32px))', boxShadow: '0 16px 48px rgba(0,0,0,.25)', fontFamily: T.font,
+        }}
+      >
+        <h2 id={titleId} style={{ margin: '0 0 4px', fontFamily: T.display, fontSize: 22 }}>Account</h2>
+        <p style={{ margin: '0 0 16px', fontSize: 13, opacity: 0.6 }}>
+          {user?.isAnonymous
+            ? 'You are signed in anonymously. Upgrade to save across devices.'
+            : `Signed in${user?.email ? ` as ${user.email}` : ''}.`}
+        </p>
+        <label style={{ display: 'block', fontSize: 11, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', opacity: 0.5, marginBottom: 6 }}>
+          Email magic link
+        </label>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@example.com"
+          style={{ ...fieldStyle, marginBottom: 10 }}
+        />
+        <button
+          type="button"
+          disabled={busy || !email.trim()}
+          onClick={() => run(async () => {
+            await signInWithEmail(email.trim());
+            setStatus(user?.isAnonymous
+              ? 'Check your email to confirm and link this account.'
+              : 'Magic link sent — check your email.');
+          })}
+          style={{ ...primaryStyle, width: '100%', marginBottom: 10, opacity: busy || !email.trim() ? 0.5 : 1 }}
+        >
+          Send magic link
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => run(signInWithGoogle)}
+          style={{ ...ghostStyle, width: '100%', marginBottom: 16 }}
+        >
+          Continue with Google
+        </button>
+        {status && <p style={{ margin: '0 0 12px', fontSize: 12, color: T.accent }}>{status}</p>}
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <button type="button" onClick={() => setOpen(false)} style={ghostStyle}>Close</button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => run(async () => {
+              await signOut();
+              setOpen(false);
+            })}
+            style={{ ...ghostStyle, color: T.gap }}
+          >
+            Sign out
+          </button>
+        </div>
+      </ModalDialog>
     </>
   );
 }

@@ -14,6 +14,7 @@ import {
 } from '../data/store';
 import { AccountChip } from '../auth/AccountChip';
 import { usePhone } from '../hooks/useViewport';
+import { ModalDialog } from '../ui/ModalDialog';
 import { field, primaryBtn, ghostBtn } from '../ui/styles';
 import { TeamPicker } from '../ui/TeamPicker';
 
@@ -54,8 +55,10 @@ function blankPlayer(roster) {
 
 // ---- the add/edit editor ---------------------------------------------------
 function PlayerEditor({ T, initial, originalNum, otherNums, onSave, onCancel }) {
+  const titleId = React.useId();
   const [p, setP] = React.useState(initial);
   const [natTouchedReg, setNatTouchedReg] = React.useState(false);
+  const dialogLabel = originalNum == null ? 'Add player' : 'Edit player';
   const set = (patch) => setP((cur) => ({ ...cur, ...patch }));
 
   const pickNat = (nat) => set({ nat, reg: natTouchedReg ? p.reg : regForNat(nat) });
@@ -93,10 +96,22 @@ function PlayerEditor({ T, initial, originalNum, otherNums, onSave, onCancel }) 
   };
 
   return (
-    <div onClick={onCancel} style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(8,12,20,.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ width: 'min(640px,100%)', maxHeight: '90vh', overflowY: 'auto', background: T.surface, border: `1px solid ${T.hair2}`, borderRadius: T.radius, padding: 22 }}>
-        <div style={{ fontFamily: T.display, fontSize: 20, fontWeight: 800, marginBottom: 16 }}>
-          {originalNum == null ? 'Add player' : 'Edit player'}
+    <ModalDialog
+      open
+      onClose={onCancel}
+      ariaLabel={dialogLabel}
+      titleId={titleId}
+      backdropStyle={{
+        position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(8,12,20,.55)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+      }}
+      panelStyle={{
+        width: 'min(640px,100%)', maxHeight: '90vh', overflowY: 'auto', background: T.surface,
+        border: `1px solid ${T.hair2}`, borderRadius: T.radius, padding: 22,
+      }}
+    >
+        <div id={titleId} style={{ fontFamily: T.display, fontSize: 20, fontWeight: 800, marginBottom: 16 }}>
+          {dialogLabel}
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 12 }}>
@@ -138,11 +153,10 @@ function PlayerEditor({ T, initial, originalNum, otherNums, onSave, onCancel }) 
           <div style={{ marginTop: 14, fontSize: 12, color: T.gap }}>{errors.map((e, i) => <div key={i}>• {e}</div>)}</div>
         )}
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 18 }}>
-          <button onClick={onCancel} style={ghostBtn(T)}>Cancel</button>
-          <button onClick={save} disabled={errors.length > 0} style={{ ...primaryBtn(T), opacity: errors.length ? 0.5 : 1, cursor: errors.length ? 'default' : 'pointer' }}>Save</button>
+          <button type="button" onClick={onCancel} style={ghostBtn(T)}>Cancel</button>
+          <button type="button" onClick={save} disabled={errors.length > 0} style={{ ...primaryBtn(T), opacity: errors.length ? 0.5 : 1, cursor: errors.length ? 'default' : 'pointer' }}>Save</button>
         </div>
-      </div>
-    </div>
+    </ModalDialog>
   );
 }
 
