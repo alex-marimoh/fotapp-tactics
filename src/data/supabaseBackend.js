@@ -4,6 +4,7 @@
  */
 import { POSITION_TYPES } from '../squad-data';
 import { getSupabase } from '../supabaseClient';
+import { showToast } from '../ui/toast';
 import { GREEK_SUPER_LEAGUE } from './league';
 import { generateRoster, SEASON } from './generator';
 import { getLeagueRules, DEFAULT_TEAM_SLUG } from './teams';
@@ -31,6 +32,8 @@ let profile = null;
 let teamAdminSlugs = new Set();
 /** @type {import('@supabase/supabase-js').User | null} */
 let authUser = null;
+/** @type {Map<string, Set<(roster: import('../squad-data').Player[]) => void>>} */
+const rosterListeners = new Map();
 
 function playerFromRow(row) {
   return {
@@ -149,6 +152,42 @@ async function loadTeamsAndRosters() {
   for (const slug of Object.keys(rosters)) rosters[slug] = sortRoster(rosters[slug]);
 }
 
+async function reloadTeamRoster(slug) {
+  const supabase = getSupabase();
+  const { data, error } = await supabase.from('players').select('*').eq('team_slug', slug);
+  if (error) throw error;
+  rosters[slug] = sortRoster((data ?? []).map(playerFromRow));
+  notifyRoster(slug);
+}
+
+function notifyRoster(slug) {
+  const roster = rosters[slug] ?? [];
+  rosterListeners.get(slug)?.forEach((cb) => cb([...roster]));
+}
+
+/**
+ * @param {string} action
+ * @param {string} slug
+ * @param {unknown} err
+ */
+async function handlePlayerWriteFailure(action, slug, err) {
+  console.error(`Supabase ${action} failed:`, err);
+  showToast(`Could not ${action}. Your changes were not saved.`);
+  try {
+    await reloadTeamRoster(slug);
+  } catch (refetchErr) {
+    console.error('Failed to refetch roster after write failure:', refetchErr);
+    showToast('Could not sync roster with server. Please refresh the page.');
+  }
+}
+
+/** @param {string} slug @param {(roster: import('../squad-data').Player[]) => void} cb */
+export function subscribeRoster(slug, cb) {
+  if (!rosterListeners.has(slug)) rosterListeners.set(slug, new Set());
+  rosterListeners.get(slug).add(cb);
+  return () => rosterListeners.get(slug)?.delete(cb);
+}
+
 export async function init() {
   await ensureSession();
   await loadProfile();
@@ -174,7 +213,9 @@ export function getTeam(slug) {
 export function upsertPlayer(slug, player, originalNum = player.num) {
   const kept = (rosters[slug] ?? []).filter((p) => p.num !== originalNum);
   rosters[slug] = sortRoster([...kept, { ...player }]);
-  persistUpsertPlayer(slug, player, originalNum).catch(console.error);
+  persistUpsertPlayer(slug, player, originalNum).catch((err) => {
+    handlePlayerWriteFailure('save player', slug, err);
+  });
   return rosters[slug];
 }
 
@@ -200,7 +241,7 @@ async function persistUpsertPlayer(slug, player, originalNum) {
 export function deletePlayer(slug, num) {
   rosters[slug] = (rosters[slug] ?? []).filter((p) => p.num !== num);
   getSupabase().from('players').delete().eq('team_slug', slug).eq('num', num).then(({ error }) => {
-    if (error) console.error(error);
+    if (error) handlePlayerWriteFailure('delete player', slug, error);
   });
   return rosters[slug];
 }
@@ -210,7 +251,9 @@ export function regenerateTeam(slug) {
   if (!club) return rosters[slug] ?? [];
   const fresh = generateRoster(club);
   rosters[slug] = fresh;
-  persistRegenerateTeam(slug, fresh).catch(console.error);
+  persistRegenerateTeam(slug, fresh).catch((err) => {
+    handlePlayerWriteFailure('regenerate squad', slug, err);
+  });
   return rosters[slug];
 }
 
