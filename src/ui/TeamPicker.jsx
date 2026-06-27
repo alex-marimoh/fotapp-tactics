@@ -6,9 +6,9 @@ import { useDismissOnEscape } from './a11y';
 
 /**
  * Club switcher dropdown — navigates via ?team= or ?admin= query param.
- * @param {{ T: object, team: object, param?: 'team' | 'admin' }} props
+ * @param {{ T: object, team: object, param?: 'team' | 'admin', onPitch?: boolean }} props
  */
-export function TeamPicker({ T, team, param = 'team' }) {
+export function TeamPicker({ T, team, param = 'team', onPitch = false }) {
   const [open, setOpen] = React.useState(false);
   const triggerRef = React.useRef(/** @type {HTMLButtonElement | null} */ (null));
   const listId = React.useId();
@@ -39,8 +39,9 @@ export function TeamPicker({ T, team, param = 'team' }) {
           gap: 8,
           padding: '7px 13px',
           borderRadius: T.pill,
-          border: `1px solid ${T.hair2}`,
-          background: T.soft,
+          border: onPitch ? `1px solid rgba(255,255,255,0.55)` : `1px solid ${T.hair2}`,
+          background: onPitch ? withA(T.bg, 0.88) : T.soft,
+          boxShadow: onPitch ? '0 2px 8px rgba(0,0,0,.18)' : undefined,
           color: T.text,
           fontWeight: 800,
           fontSize: 13,

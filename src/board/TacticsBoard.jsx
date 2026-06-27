@@ -78,7 +78,31 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
   const [adding, setAdding] = React.useState(null);
   const [addTab, setAddTab] = React.useState('roster');
   const [form, setForm] = React.useState({ name: '', type: 'CB', reg: 'eu', age: '21', rating: '3' });
-  const [infoView, setInfoView] = React.useState('news');
+  const [infoView, setInfoView] = React.useState('roster');
+  const [infoWidth, setInfoWidth] = React.useState(460);
+  const gridRef = React.useRef(/** @type {HTMLDivElement | null} */ (null));
+
+  const startInfoResize = (e) => {
+    e.preventDefault();
+    const grid = gridRef.current;
+    if (!grid) return;
+    const rect = grid.getBoundingClientRect();
+    const onMove = (ev) => {
+      const next = rect.right - ev.clientX;
+      const clamped = Math.max(300, Math.min(rect.width - 360, next));
+      setInfoWidth(clamped);
+    };
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'col-resize';
+  };
 
   const allByNum = React.useMemo(() => Object.fromEntries(roster.map((p) => [p.num, p])), [roster]);
   const slots = FORMATIONS[formation];
@@ -197,6 +221,7 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
                 </>
               )}
             </div>
+            <TeamPicker T={T} team={team} param="team" onPitch />
             <div style={{ flex: 1 }} />
             <CompChip label="Non-EU" c={comp.noneu} />
             <CompChip label="Homegrown" c={comp.home} />
@@ -294,7 +319,7 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
 
   const depthDrawer = (
         <div style={{ flexShrink: 0, background: T.panel, borderTop: `1px solid ${T.hair}`,
-          padding: phone ? '14px 14px' : '14px 22px', minHeight: 158 }}>
+          padding: phone ? '11px 14px' : '11px 22px', minHeight: 126 }}>
         {selDepth ? (
           <div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
@@ -304,7 +329,7 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
               </span>
               <span style={{ fontSize: 12, color: T.textMuted }}>· reorder, sell, or add depth</span>
             </div>
-            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4, minHeight: 132, alignItems: 'stretch' }}>
+            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4, minHeight: 106, alignItems: 'stretch' }}>
               {[selDepth.starter, ...selDepth.backups].filter(Boolean).map((o, i) => {
                 const p = allByNum[o.num];
                 if (!p) return null;
@@ -312,7 +337,7 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
                 const isStarter = i === 0;
                 const bIdx = i - 1;
                 return (
-                  <div key={`${o.num}-${i}`} style={{ position: 'relative', minWidth: 196, padding: 14, borderRadius: T.radius,
+                  <div key={`${o.num}-${i}`} style={{ position: 'relative', minWidth: 196, padding: 11, borderRadius: T.radius,
                     background: gone ? withA(T.gap, 0.1) : (T.flat ? T.cardTo : `linear-gradient(160deg,${T.cardFrom},${T.cardTo})`),
                     border: `1.5px solid ${gone ? hc.gap : isStarter ? hc[healthOf(depth, selected, leaving)] : T.hair2}`,
                     opacity: gone ? 0.65 : 1 }}>
@@ -369,7 +394,6 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
         <span style={{ fontWeight: 850, fontSize: 19, letterSpacing: '-0.02em', fontFamily: T.display }}>
           <span style={{ color: T.accent }}>fot</span><span style={{ color: T.accent2 }}>app</span>
         </span>
-        <TeamPicker T={T} team={team} param="team" />
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <AccountChip T={T} />
           <button onClick={() => { clearScenario(team.slug); window.location.reload(); }}
@@ -402,10 +426,16 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
         </div>
       ) : (
         <>
-          <div style={{ flex: 1, minHeight: 0, display: 'grid',
-            gridTemplateColumns: wide ? 'minmax(0, 1.5fr) minmax(300px, 1fr)' : 'minmax(0, 1fr) minmax(0, 1fr)',
+          <div ref={gridRef} style={{ flex: 1, minHeight: 0, display: 'grid',
+            gridTemplateColumns: `minmax(360px, 1fr) 6px ${infoWidth}px`,
             gap: 1, background: T.hair }}>
             {pitchHalf}
+            <div onPointerDown={startInfoResize} role="separator" aria-orientation="vertical"
+              aria-label="Resize panel" title="Drag to resize"
+              style={{ cursor: 'col-resize', background: T.soft, display: 'flex',
+                alignItems: 'center', justifyContent: 'center', touchAction: 'none' }}>
+              <div style={{ width: 2, height: 28, borderRadius: 2, background: T.hair2 }} />
+            </div>
             {infoHalf}
           </div>
           {depthDrawer}
