@@ -6,7 +6,7 @@ import React from 'react';
 import { DEFAULT_SKIN } from '../../board';
 import { SwipeDeck } from './SwipeDeck';
 import { createQuizModel, archetypeOf, fmtM } from './data';
-import { getTeam, DEFAULT_TEAM_SLUG } from '../../data/teams';
+import { getTeam, DEFAULT_TEAM_SLUG, saveQuizResult, listQuizResults } from '../../data/store';
 
 // ---- shared bits ----------------------------------------------------------
 function Wordmark({ T }) {
@@ -33,7 +33,7 @@ const ghostBtn = (T) => ({ padding: '13px 22px', borderRadius: T.pill, border: `
 // ===========================================================================
 // Intro — the front door
 // ===========================================================================
-function Intro({ T, total, onStart }) {
+function Intro({ T, total, onStart, last }) {
   const step = (glyph, glyphColor, label) => (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 14px', borderRadius: T.pill, background: T.soft, border: `1px solid ${T.hair2}`, fontSize: 13, fontWeight: 700 }}>
       <span style={{ color: glyphColor, fontWeight: 800 }}>{glyph}</span>{label}
@@ -54,6 +54,11 @@ function Intro({ T, total, onStart }) {
         {step('↓', T.gap, 'Sell')}
       </div>
       <button onClick={onStart} style={{ ...primaryBtn(T), marginTop: 8, padding: '15px 34px', fontSize: 16 }}>Start the quiz →</button>
+      {last && (
+        <div style={{ marginTop: 6, fontSize: 13, opacity: 0.65 }}>
+          Last time: <b style={{ opacity: 1 }}>{last.archetype}</b> · war chest {fmtM(last.warChest)} · {last.sellCount} sold
+        </div>
+      )}
     </div>
   );
 }
@@ -170,6 +175,22 @@ export function QuizFlow({ team = getTeam(DEFAULT_TEAM_SLUG) }) {
   const restart = () => { setDecisions({}); setIdx(0); setPhase('intro'); };
   const goBoard = () => { window.location.search = `?team=${team.slug}`; };
 
+  // Save the result once when we land on the result screen; keep history per team.
+  const savedRef = React.useRef(false);
+  React.useEffect(() => {
+    if (phase !== 'result') { savedRef.current = false; return; }
+    if (savedRef.current) return;
+    savedRef.current = true;
+    const arch = archetypeOf(summary);
+    saveQuizResult(team.slug, {
+      archetype: arch.title, warChest: summary.warChest, sellCount: summary.sellCount,
+      keepCount: summary.keepCount, decided: summary.decided, total: summary.total, gaps: summary.gaps,
+    });
+  }, [phase, summary, team.slug]);
+
+  // Read the most recent saved result while on the intro screen (after a save it's fresh).
+  const lastResult = phase === 'intro' ? listQuizResults(team.slug)[0] || null : null;
+
   return (
     <div style={{ width: '100%', height: '100vh', background: T.bg, color: T.text, fontFamily: T.font, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div style={{ height: 56, display: 'flex', alignItems: 'center', gap: 12, padding: '0 26px', flexShrink: 0,
@@ -193,7 +214,7 @@ export function QuizFlow({ team = getTeam(DEFAULT_TEAM_SLUG) }) {
       </div>
 
       <div style={{ flex: 1, minHeight: 0 }}>
-        {phase === 'intro' && <Intro T={T} total={summary.total} onStart={() => { setIdx(0); setPhase('play'); }} />}
+        {phase === 'intro' && <Intro T={T} total={summary.total} last={lastResult} onStart={() => { setIdx(0); setPhase('play'); }} />}
         {phase === 'play' && <Play T={T} model={model} decisions={decisions} decide={decide} idx={idx} setIdx={setIdx} summary={summary} onFinish={() => setPhase('result')} />}
         {phase === 'result' && <Result T={T} model={model} decisions={decisions} summary={summary} onApply={goBoard} onRestart={restart} />}
       </div>

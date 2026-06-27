@@ -79,3 +79,13 @@ export const NONEU_NATIONS = [
   'BR', 'AR', 'NG', 'GH', 'SN', 'RS', 'JP', 'KR', 'US', 'CO', 'EG', 'MA', 'CI', 'CM', 'UY', 'CL',
   'UA', 'AU',
 ];
+
+// Registration category derived from nationality (ADR 0009): Greek = homegrown,
+// EU/EEA = eu, everything else = non-EU. The admin page can override this per player.
+export function regForNat(nat) {
+  if (nat === 'GR') return 'home';
+  return EU_NATIONS.includes(nat) ? 'eu' : 'noneu';
+}
+
+// All nationalities the admin picker offers, grouped by category.
+export const ALL_NATIONS = ['GR', ...EU_NATIONS, ...NONEU_NATIONS];

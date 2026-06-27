@@ -3,7 +3,9 @@ import {
   FORMATIONS, FORMATION_NAMES, PLACEHOLDER_NEWS, POSITION_TYPES, TIER_LABEL,
   buildDepth, healthOf, effectiveStarterNum, complianceOf, tierFor, HEALTH_LABEL,
 } from './squad-data';
-import { getTeams, getTeam, DEFAULT_TEAM_SLUG } from './data/teams';
+import {
+  getTeams, getTeam, DEFAULT_TEAM_SLUG, loadScenario, saveScenario, clearScenario,
+} from './data/store';
 
 // Full skin schema — colors PLUS style tokens (font, radius, glow, flat, borders).
 // The layout never changes; a skin only swaps these values. Override per render
@@ -115,11 +117,26 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
     fit();
     return () => ro.disconnect();
   }, [wide]);
-  const [roster, setRoster] = React.useState(team.roster);
-  const [formation, setFormation] = React.useState(FORMATION_NAMES[0]);
-  const [depthMap, setDepthMap] = React.useState(() => ({ [FORMATION_NAMES[0]]: buildDepth(team.roster, FORMATIONS[FORMATION_NAMES[0]]) }));
-  const [selected, setSelected] = React.useState(() => attackerSlot(FORMATIONS[FORMATION_NAMES[0]]));
-  const [leaving, setLeaving] = React.useState(() => new Set());
+  // Restore the autosaved scenario for this team, if any (Phase 1 persistence).
+  const saved = React.useMemo(() => loadScenario(team.slug), [team.slug]);
+  const startFormation = saved?.formation ?? FORMATION_NAMES[0];
+  const startRoster = saved?.roster ?? team.roster;
+  const [roster, setRoster] = React.useState(startRoster);
+  const [formation, setFormation] = React.useState(startFormation);
+  const [depthMap, setDepthMap] = React.useState(
+    () => saved?.depthMap ?? { [startFormation]: buildDepth(startRoster, FORMATIONS[startFormation]) },
+  );
+  const [selected, setSelected] = React.useState(() => attackerSlot(FORMATIONS[startFormation]));
+  const [leaving, setLeaving] = React.useState(() => new Set(saved?.leaving ?? []));
+
+  // Debounced autosave of the what-if scenario (formation, depth, leaving, roster).
+  React.useEffect(() => {
+    const id = setTimeout(
+      () => saveScenario(team.slug, { formation, depthMap, leaving: [...leaving], roster }),
+      400,
+    );
+    return () => clearTimeout(id);
+  }, [team.slug, formation, depthMap, leaving, roster]);
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [adding, setAdding] = React.useState(null); // slot id being added to
   const [addTab, setAddTab] = React.useState('roster');
@@ -202,12 +219,25 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
           <span style={{ color: T.accent }}>fot</span><span style={{ color: T.accent2 }}>app</span>
         </span>
         <TeamPicker team={team} />
-        <button onClick={() => { window.location.search = `?quiz=squad&team=${team.slug}`; }}
-          style={{ marginLeft: 'auto', padding: '8px 16px', borderRadius: T.pill, border: 'none',
-            background: T.flat ? T.accent : `linear-gradient(90deg,${T.accent},${T.accentDark})`, color: T.onAccent,
-            fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
-          Squad quiz →
-        </button>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button onClick={() => { clearScenario(team.slug); window.location.reload(); }}
+            title="Reset this board to the squad"
+            style={{ padding: '7px 13px', borderRadius: T.pill, border: `1px solid ${T.hair2}`, background: T.soft,
+              color: T.text, fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+            ↺ Reset
+          </button>
+          <button onClick={() => { window.location.search = `?admin=${team.slug}`; }}
+            style={{ padding: '7px 13px', borderRadius: T.pill, border: `1px solid ${T.hair2}`, background: T.soft,
+              color: T.text, fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+            Manage squad
+          </button>
+          <button onClick={() => { window.location.search = `?quiz=squad&team=${team.slug}`; }}
+            style={{ padding: '8px 16px', borderRadius: T.pill, border: 'none',
+              background: T.flat ? T.accent : `linear-gradient(90deg,${T.accent},${T.accentDark})`, color: T.onAccent,
+              fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+            Squad quiz →
+          </button>
+        </div>
       </div>
 
       {/* hero: pitch half | info half (pitch widens on wide screens) */}

@@ -215,15 +215,17 @@ backend later**:
 
 Each phase is shippable on its own; only Phase 4 needs the Supabase link.
 
-- **Phase 0 — Multi-team seam + generator.** Generalize `squad-data.js`; build the roster generator
-  for all Greek SL clubs; move `LIMITS` to the league; add finance fields to the player. Board + quiz
-  read `getTeam(slug)`; add the team picker and `?team=` routing. *No backend.*
-- **Phase 1 — Persistence seam (local backend).** Add `store.js` with `localBackend`. Wire board
-  autosave (`saveScenario`/`loadScenario`) and quiz result history (`saveQuizResult`/
-  `listQuizResults`). Everything persists per-device via `localStorage`.
-- **Phase 2 — Admin page.** Build `?admin=<slug>` roster management (CRUD + finance/registration
-  editing + regenerate), writing through `store.js`. Role check via `isAdminFor` (local backend
-  treats the device user as admin during dev).
+- **Phase 0 — Multi-team seam + generator. ✅ done.** Generalize `squad-data.js`; build the roster
+  generator for all Greek SL clubs; move `LIMITS` to the league; add finance fields to the player.
+  Board + quiz read `getTeam(slug)`; add the team picker and `?team=` routing. *No backend.*
+- **Phase 1 — Persistence seam (local backend). ✅ done.** `src/data/store.js` over `localStorage`.
+  Board autosaves its scenario (`saveScenario`/`loadScenario`, debounced) with a Reset control; the
+  quiz saves each result and shows the last one on its intro (`saveQuizResult`/`listQuizResults`).
+  Reads stay synchronous so Supabase can hydrate-then-serve later without rewiring screens.
+- **Phase 2 — Admin page. ✅ done.** `?admin=<slug>` roster management — add/edit/remove players with
+  contract, wage, market value, transfer fee, nationality→registration (overridable), rating and
+  positions, plus regenerate-from-seed. Writes overlay the generated roster through `store.js`;
+  `isAdminFor` returns true on the local backend (real gating arrives with Phase 3).
 - **Phase 3 — Supabase wiring (needs the link).** Add `supabaseBackend`, auth (anonymous-first +
   upgrade), migrations for §6, RLS, roles; run the generator once as the seed. Flip the store backend
   via env. No screen changes.
