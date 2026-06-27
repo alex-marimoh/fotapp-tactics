@@ -12,6 +12,7 @@ import { SEASON } from '../lib/format';
 import {
   upsertPlayer, deletePlayer, regenerateTeam, hasRosterEdits, usesSupabase, subscribeRoster,
 } from '../data/store';
+import { navigate } from '../navigation/appRoute';
 import { AccountChip } from '../auth/AccountChip';
 import { usePhone } from '../hooks/useViewport';
 import { ModalDialog } from '../ui/ModalDialog';
@@ -206,7 +207,7 @@ export function AdminPage({ team }) {
         <TeamPicker T={T} team={team} param="admin" />
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
           <AccountChip T={T} />
-          <button onClick={() => { window.location.search = `?team=${team.slug}`; }} style={ghostBtn(T)}>← Back to board</button>
+          <button onClick={() => navigate({ team: team.slug })} style={ghostBtn(T)}>← Back to board</button>
         </div>
       </div>
 
