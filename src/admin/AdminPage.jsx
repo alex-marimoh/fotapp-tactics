@@ -12,6 +12,7 @@ import { SEASON } from '../data/generator';
 import {
   getTeams, upsertPlayer, deletePlayer, regenerateTeam, hasRosterEdits,
 } from '../data/store';
+import { AccountChip } from '../auth/AccountChip';
 
 const REG_LABEL = { home: 'Greek (HG)', eu: 'EU', noneu: 'Non-EU' };
 const EMPTY = new Set();
@@ -234,7 +235,10 @@ export function AdminPage({ team }) {
         </span>
         <span style={{ fontSize: 13, opacity: 0.55, fontWeight: 600 }}>Manage squad</span>
         <AdminTeamPicker T={T} team={team} />
-        <button onClick={() => { window.location.search = `?team=${team.slug}`; }} style={{ marginLeft: 'auto', ...ghostBtn(T) }}>← Back to board</button>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <AccountChip T={T} />
+          <button onClick={() => { window.location.search = `?team=${team.slug}`; }} style={ghostBtn(T)}>← Back to board</button>
+        </div>
       </div>
 
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: phone ? '16px 14px' : '24px 26px' }}>
