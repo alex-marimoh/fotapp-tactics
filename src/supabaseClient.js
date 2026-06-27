@@ -1,19 +1,30 @@
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseEnv, isSupabaseConfigured } from './supabaseConfig';
 
-const url = import.meta.env.VITE_SUPABASE_URL;
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+export { isSupabaseConfigured } from './supabaseConfig';
 
 /** @type {import('@supabase/supabase-js').SupabaseClient | null} */
 let client = null;
 
-/** @returns {boolean} */
-export function isSupabaseConfigured() {
-  return Boolean(url && anonKey);
+/** @type {Promise<import('@supabase/supabase-js').SupabaseClient | null> | null} */
+let clientPromise = null;
+
+/** Load the Supabase SDK and create the client. Call before any sync getSupabase(). */
+export function ensureSupabaseClient() {
+  if (!isSupabaseConfigured()) return Promise.resolve(null);
+  if (client) return Promise.resolve(client);
+  if (!clientPromise) {
+    clientPromise = import('@supabase/supabase-js').then(({ createClient }) => {
+      const { url, anonKey } = getSupabaseEnv();
+      client = createClient(url, anonKey);
+      return client;
+    });
+  }
+  return clientPromise;
 }
 
 /** @returns {import('@supabase/supabase-js').SupabaseClient | null} */
 export function getSupabase() {
   if (!isSupabaseConfigured()) return null;
-  if (!client) client = createClient(url, anonKey);
+  if (!client) throw new Error('Supabase client not initialized — call ensureSupabaseClient() first');
   return client;
 }

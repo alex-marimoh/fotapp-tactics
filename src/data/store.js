@@ -4,9 +4,8 @@
  * One module every screen reads/writes through. Picks supabaseBackend when
  * VITE_SUPABASE_* env keys are present, otherwise localBackend (offline dev).
  */
-import { isSupabaseConfigured } from '../supabaseClient';
+import { isSupabaseConfigured } from '../supabaseConfig';
 import * as local from './localBackend';
-import * as remote from './supabaseBackend';
 
 /** @type {typeof local} */
 let backend = local;
@@ -21,7 +20,11 @@ export function usesSupabase() {
 /** Boot the active backend (no-op for local). Call once before rendering. */
 export function bootStore() {
   if (!isSupabaseConfigured()) return Promise.resolve();
-  if (!bootPromise) bootPromise = remote.init().then(() => { backend = remote; });
+  if (!bootPromise) {
+    bootPromise = import('./supabaseBackend').then((remote) =>
+      remote.init().then(() => { backend = remote; }),
+    );
+  }
   return bootPromise;
 }
 

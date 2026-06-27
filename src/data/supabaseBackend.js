@@ -3,7 +3,7 @@
  * stay synchronous; writes update cache then persist async.
  */
 import { POSITION_TYPES } from '../squad-data';
-import { getSupabase } from '../supabaseClient';
+import { ensureSupabaseClient, getSupabase } from '../supabaseClient';
 import { showToast } from '../ui/toast';
 import { GREEK_SUPER_LEAGUE } from './league';
 import { generateRoster, SEASON } from './generator';
@@ -189,6 +189,7 @@ export function subscribeRoster(slug, cb) {
 }
 
 export async function init() {
+  await ensureSupabaseClient();
   await ensureSession();
   await loadProfile();
   await Promise.all([loadTeamsAndRosters(), reloadUserData()]);
