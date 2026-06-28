@@ -23,6 +23,8 @@ const serverPlayers = vi.hoisted(() => ([
 
 const mockDelete = vi.hoisted(() => vi.fn());
 const mockSelectEq = vi.hoisted(() => vi.fn());
+const mockUpsert = vi.hoisted(() => vi.fn());
+const mockMaybeSingle = vi.hoisted(() => vi.fn());
 
 function userScopedQuery() {
   const result = Promise.resolve({ data: [], error: null });
@@ -61,7 +63,7 @@ function buildMockClient() {
                 return Promise.resolve({ data: serverPlayers.filter((p) => p.team_slug === val), error: null });
               }
               return {
-                eq: () => ({ maybeSingle: async () => ({ data: null }) }),
+                eq: () => ({ maybeSingle: mockMaybeSingle }),
               };
             },
           }),
@@ -70,11 +72,7 @@ function buildMockClient() {
               eq: () => mockDelete(),
             }),
           }),
-          insert: () => ({
-            select: () => ({
-              single: async () => ({ data: null, error: { message: 'RLS denied' } }),
-            }),
-          }),
+          upsert: (...args) => mockUpsert(...args),
         };
       }
       if (table === 'profiles') {
@@ -102,16 +100,137 @@ vi.mock('../supabaseClient', () => ({
   getSupabase: () => mockClient,
 }));
 
+describe('supabaseBackend persistUpsertPlayer', () => {
+  beforeEach(async () => {
+    vi.resetModules();
+    showToast.mockReset();
+    mockDelete.mockReset();
+    mockSelectEq.mockReset();
+    mockUpsert.mockReset();
+    mockMaybeSingle.mockReset();
+    mockMaybeSingle.mockResolvedValue({ data: null });
+    mockDelete.mockResolvedValue({ error: null });
+    mockUpsert.mockReturnValue({
+      select: () => ({
+        single: async () => ({ data: { id: 'upsert-id' }, error: null }),
+      }),
+    });
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  it('saves an existing player with a single upsert and no pre-save SELECT', async () => {
+    const backend = await import('./supabaseBackend');
+    await backend.init();
+
+    backend.upsertPlayer('olympiacos', {
+      id: 'p1',
+      num: 1,
+      name: 'Updated Player',
+      age: 25,
+      nat: 'GR',
+      reg: 'home',
+      rating: 4,
+      pos: ['CB'],
+      pos2: [],
+      value: 1,
+      wage: 10,
+      contractEnd: 2028,
+    });
+
+    await vi.waitFor(() => {
+      expect(mockUpsert).toHaveBeenCalledTimes(1);
+    });
+
+    expect(mockMaybeSingle).not.toHaveBeenCalled();
+    expect(mockUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({ team_slug: 'olympiacos', num: 1, name: 'Updated Player', id: 'p1' }),
+      { onConflict: 'team_slug,num' },
+    );
+    expect(backend.getTeam('olympiacos').roster.find((p) => p.num === 1)?.id).toBe('upsert-id');
+  });
+
+  it('creates a new player via upsert and back-fills its id', async () => {
+    const backend = await import('./supabaseBackend');
+    await backend.init();
+
+    backend.upsertPlayer('olympiacos', {
+      num: 42,
+      name: 'New Signing',
+      age: 20,
+      nat: 'GR',
+      reg: 'home',
+      rating: 2,
+      pos: ['CM'],
+      pos2: [],
+      value: 1,
+      wage: 5,
+      contractEnd: 2029,
+    });
+
+    await vi.waitFor(() => {
+      expect(mockUpsert).toHaveBeenCalledTimes(1);
+    });
+
+    expect(mockMaybeSingle).not.toHaveBeenCalled();
+    expect(mockDelete).not.toHaveBeenCalled();
+    expect(backend.getTeam('olympiacos').roster.find((p) => p.num === 42)?.id).toBe('upsert-id');
+  });
+
+  it('renumbers a player by upserting the new num and deleting the old row', async () => {
+    const backend = await import('./supabaseBackend');
+    await backend.init();
+
+    backend.upsertPlayer(
+      'olympiacos',
+      {
+        id: 'p1',
+        num: 7,
+        name: 'Renumbered Player',
+        age: 25,
+        nat: 'GR',
+        reg: 'home',
+        rating: 3,
+        pos: ['CB'],
+        pos2: [],
+        value: 1,
+        wage: 10,
+        contractEnd: 2028,
+      },
+      1,
+    );
+
+    await vi.waitFor(() => {
+      expect(mockDelete).toHaveBeenCalledTimes(1);
+    });
+
+    expect(mockUpsert).toHaveBeenCalledWith(
+      expect.not.objectContaining({ id: 'p1' }),
+      { onConflict: 'team_slug,num' },
+    );
+    expect(mockDelete).toHaveBeenCalled();
+    expect(backend.getTeam('olympiacos').roster.find((p) => p.num === 7)?.id).toBe('upsert-id');
+    expect(backend.getTeam('olympiacos').roster.some((p) => p.num === 1)).toBe(false);
+  });
+});
+
 describe('supabaseBackend player write failures', () => {
   beforeEach(async () => {
     vi.resetModules();
     showToast.mockReset();
     mockDelete.mockReset();
     mockSelectEq.mockReset();
+    mockUpsert.mockReset();
+    mockMaybeSingle.mockReset();
     vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   it('shows toast, logs, and refetches roster after a failed upsert', async () => {
+    mockUpsert.mockReturnValue({
+      select: () => ({
+        single: async () => ({ data: null, error: { message: 'RLS denied' } }),
+      }),
+    });
+
     const backend = await import('./supabaseBackend');
     await backend.init();
 
