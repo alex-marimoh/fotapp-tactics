@@ -166,3 +166,85 @@ export function complianceOf(roster, leaving, rules = LIMITS) {
     home: { n: home, lim: rules.home, state: state(home, rules.home) },
   };
 }
+
+/** Short registration labels for badges and roster pills. */
+export const REG_LABEL_SHORT = { home: 'HG', eu: 'EU', noneu: 'NE' };
+
+/** Full registration labels for aria and tooltips. */
+export const REG_LABEL_FULL = { home: 'Homegrown', eu: 'EU', noneu: 'Non-EU' };
+
+/**
+ * Human-readable copy and progress fill for a compliance counter.
+ * @param {{ n: number, lim: { kind: string, value: number }, state: string }} c
+ * @returns {{ primary: string, secondary: string, fill: number }}
+ */
+export function complianceDisplay(c) {
+  const { n, lim, state } = c;
+  if (lim.kind === 'max') {
+    const left = Math.max(0, lim.value - n);
+    return {
+      primary: `${n} of ${lim.value} used`,
+      secondary: state === 'over'
+        ? `${n - lim.value} over cap`
+        : left === 0 ? 'at cap' : `${left} slot${left === 1 ? '' : 's'} left`,
+      fill: Math.min(n / lim.value, 1),
+    };
+  }
+  const short = Math.max(0, lim.value - n);
+  return {
+    primary: `${n} registered`,
+    secondary: state === 'under'
+      ? `${short} short of ${lim.value} required`
+      : `${lim.value} required ✓`,
+    fill: Math.min(n / lim.value, 1),
+  };
+}
+
+/**
+ * Aggregate squad registration validity for the ribbon status pill.
+ * @param {{ noneu: object, home: object }} comp
+ * @returns {{ valid: boolean, message: string }}
+ */
+export function squadComplianceStatus(comp) {
+  if (comp.noneu.state === 'over') {
+    const over = comp.noneu.n - comp.noneu.lim.value;
+    return { valid: false, message: `${over} over Non-EU cap` };
+  }
+  if (comp.home.state === 'under') {
+    const short = comp.home.lim.value - comp.home.n;
+    return { valid: false, message: `${short} short on homegrown` };
+  }
+  if (comp.noneu.state === 'at') {
+    return { valid: true, message: 'Squad valid · Non-EU at cap' };
+  }
+  return { valid: true, message: 'Squad valid ✓' };
+}
+
+/**
+ * Find the first formation slot that includes a player in its depth stack.
+ * @param {Record<string, { starter: object|null, backups: object[] }>} depth
+ * @param {number} num
+ * @returns {string|null}
+ */
+export function slotForPlayer(depth, num) {
+  for (const [slotId, d] of Object.entries(depth)) {
+    const stack = [d.starter, ...d.backups].filter(Boolean);
+    if (stack.some((x) => x.num === num)) return slotId;
+  }
+  return null;
+}
+
+/**
+ * Set of jersey numbers that are effective starters across all slots.
+ * @param {Record<string, { starter: object|null, backups: object[] }>} depth
+ * @param {Set<number>} leaving
+ * @returns {Set<number>}
+ */
+export function effectiveStarterNums(depth, leaving) {
+  const nums = new Set();
+  for (const slotId of Object.keys(depth)) {
+    const n = effectiveStarterNum(depth, slotId, leaving);
+    if (n != null) nums.add(n);
+  }
+  return nums;
+}

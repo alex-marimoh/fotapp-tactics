@@ -1,42 +1,71 @@
 import React from 'react';
+import { useDismissOnEscape } from '../ui/a11y';
+import { regStylesOf } from './regStyles';
 import { useT, hcOf } from './theme';
 
-export function InfoLegend() {
+/**
+ * Compact inline legend for depth health colors and registration badges.
+ * @param {{ phone?: boolean, inline?: boolean }} props
+ */
+export function InfoLegend({ phone = false, inline = false }) {
   const T = useT();
   const hc = hcOf(T);
+  const regStyles = regStylesOf(T);
   const [open, setOpen] = React.useState(false);
-  const items = [
-    ['Solid', hc.solid, 'Natural starter with a natural backup.'],
-    ['Thin', hc.thin, 'Out-of-position starter, or no natural backup.'],
-    ['Gap', hc.gap, 'No one available to start here.'],
-    ['Out of position', T.oop, 'A player filling a non-natural role.'],
+  const btnRef = React.useRef(/** @type {HTMLButtonElement | null} */ (null));
+  useDismissOnEscape(open && phone, () => setOpen(false), btnRef);
+
+  const healthItems = [
+    ['Solid', hc.solid],
+    ['Thin', hc.thin],
+    ['Gap', hc.gap],
   ];
-  return (
-    <div style={{ position: 'absolute', right: 12, bottom: 12, zIndex: 10 }}>
-      {open && (
-        <>
-          <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 0 }} />
-          <div style={{ position: 'absolute', right: 0, bottom: 'calc(100% + 8px)', zIndex: 1, width: 248,
-            background: T.surface, color: T.text, border: `1px solid ${T.hair2}`, borderRadius: T.radius,
-            padding: '12px 14px', boxShadow: '0 12px 32px rgba(0,0,0,.3)' }}>
-            <div style={{ fontSize: 12, fontWeight: 800, marginBottom: 8, fontFamily: T.display }}>What the colors mean</div>
-            {items.map(([label, col, desc]) => (
-              <div key={label} style={{ display: 'flex', gap: 9, alignItems: 'flex-start', padding: '5px 0' }}>
-                <span style={{ width: 10, height: 10, borderRadius: '50%', background: col, marginTop: 3, flexShrink: 0 }} />
-                <div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: col }}>{label}</div>
-                  <div style={{ fontSize: 11, opacity: 0.6, lineHeight: 1.35 }}>{desc}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-      <button onClick={() => setOpen((o) => !o)} title="What do the colors mean?" aria-label="Legend"
-        style={{ width: 34, height: 34, borderRadius: '50%', cursor: 'pointer', fontFamily: 'Georgia, serif',
-          background: T.surface, color: T.accent, border: `1px solid ${T.hair2}`,
-          fontSize: 17, fontWeight: 700, fontStyle: 'italic', display: 'grid', placeItems: 'center',
-          boxShadow: '0 2px 8px rgba(0,0,0,.18)' }}>i</button>
+
+  const legendContent = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: phone ? 8 : 10, flexWrap: 'wrap',
+      fontSize: 10, fontWeight: 700, color: T.textMuted }}>
+      {healthItems.map(([label, col]) => (
+        <span key={label} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: col, flexShrink: 0,
+            border: `1px solid ${col}` }} aria-hidden="true" />
+          <span style={{ color: T.text }}>{label}</span>
+        </span>
+      ))}
+      <span style={{ opacity: 0.35 }} aria-hidden="true">|</span>
+      {(['home', 'eu', 'noneu']).map((reg) => (
+        <span key={reg} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ fontSize: 8, fontWeight: 800, padding: '1px 4px', borderRadius: T.pill,
+            background: regStyles[reg].bg, border: `1px solid ${regStyles[reg].border}`,
+            color: regStyles[reg].color }} aria-hidden="true">{regStyles[reg].label}</span>
+          <span style={{ color: T.text }}>
+            {reg === 'home' ? 'Homegrown' : reg === 'eu' ? 'EU' : 'Non-EU'}
+          </span>
+        </span>
+      ))}
     </div>
   );
+
+  if (inline) {
+    if (phone) {
+      return (
+        <div style={{ position: 'relative' }}>
+          <button ref={btnRef} type="button" onClick={() => setOpen((o) => !o)}
+            aria-expanded={open}
+            style={{ padding: '5px 10px', borderRadius: T.pill, cursor: 'pointer', fontFamily: 'inherit',
+              fontSize: 11, fontWeight: 700, background: T.soft, color: T.text, border: `1px solid ${T.hair2}` }}>
+            Legend {open ? '▴' : '▾'}
+          </button>
+          {open && (
+            <div style={{ marginTop: 8, padding: '8px 10px', borderRadius: T.radius,
+              background: T.surface, border: `1px solid ${T.hair2}` }}>
+              {legendContent}
+            </div>
+          )}
+        </div>
+      );
+    }
+    return legendContent;
+  }
+
+  return null;
 }

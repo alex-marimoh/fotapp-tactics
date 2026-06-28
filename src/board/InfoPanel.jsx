@@ -8,6 +8,10 @@ export const InfoPanel = React.memo(function InfoPanel({
   infoView,
   onInfoViewChange,
   roster,
+  comp,
+  starterNums,
+  highlightedNum,
+  onSelectPlayer,
 }) {
   const T = useT();
 
@@ -46,7 +50,13 @@ export const InfoPanel = React.memo(function InfoPanel({
           </div>
         </>
       ) : (
-        <RosterTable roster={roster} />
+        <RosterTable
+          roster={roster}
+          comp={comp}
+          starterNums={starterNums}
+          highlightedNum={highlightedNum}
+          onSelectPlayer={onSelectPlayer}
+        />
       )}
     </div>
   );

@@ -4,7 +4,11 @@ import {
   buildDepth,
   healthOf,
   effectiveStarterNum,
+  effectiveStarterNums,
   complianceOf,
+  complianceDisplay,
+  squadComplianceStatus,
+  slotForPlayer,
   FORMATIONS,
   LIMITS,
 } from './squad-data';
@@ -233,5 +237,110 @@ describe('complianceOf', () => {
 
     expect(result.noneu.n).toBe(0);
     expect(result.noneu.state).toBe('ok');
+  });
+});
+
+describe('complianceDisplay', () => {
+  it('formats max-limit counters with slots left', () => {
+    const c = { n: 7, lim: LIMITS.noneu, state: 'ok' };
+    expect(complianceDisplay(c)).toEqual({
+      primary: '7 of 8 used',
+      secondary: '1 slot left',
+      fill: 7 / 8,
+    });
+  });
+
+  it('formats max-limit at cap', () => {
+    const c = { n: 8, lim: LIMITS.noneu, state: 'at' };
+    expect(complianceDisplay(c).secondary).toBe('at cap');
+  });
+
+  it('formats max-limit over cap', () => {
+    const c = { n: 9, lim: LIMITS.noneu, state: 'over' };
+    expect(complianceDisplay(c).secondary).toBe('1 over cap');
+  });
+
+  it('formats min-limit homegrown ok', () => {
+    const c = { n: 10, lim: LIMITS.home, state: 'ok' };
+    expect(complianceDisplay(c)).toEqual({
+      primary: '10 registered',
+      secondary: '3 required ✓',
+      fill: 1,
+    });
+  });
+
+  it('formats min-limit homegrown under', () => {
+    const c = { n: 2, lim: LIMITS.home, state: 'under' };
+    expect(complianceDisplay(c).secondary).toBe('1 short of 3 required');
+  });
+});
+
+describe('squadComplianceStatus', () => {
+  it('reports valid when within limits', () => {
+    const comp = complianceOf(
+      [player(1, { reg: 'home' }), player(2, { reg: 'home' }), player(3, { reg: 'home' })],
+      new Set(),
+    );
+    expect(squadComplianceStatus(comp)).toEqual({ valid: true, message: 'Squad valid ✓' });
+  });
+
+  it('reports over Non-EU cap', () => {
+    const heavy = [
+      ...Array.from({ length: 9 }, (_, i) => player(i + 1, { reg: 'noneu' })),
+      player(99, { reg: 'home' }), player(98, { reg: 'home' }), player(97, { reg: 'home' }),
+    ];
+    const comp = complianceOf(heavy, new Set());
+    expect(squadComplianceStatus(comp).valid).toBe(false);
+    expect(squadComplianceStatus(comp).message).toBe('1 over Non-EU cap');
+  });
+
+  it('reports homegrown shortfall', () => {
+    const comp = complianceOf([player(1, { reg: 'home' })], new Set());
+    expect(squadComplianceStatus(comp).valid).toBe(false);
+    expect(squadComplianceStatus(comp).message).toBe('2 short on homegrown');
+  });
+});
+
+describe('slotForPlayer', () => {
+  it('returns slot id when player is in depth stack', () => {
+    const roster = [
+      player(1, { pos: ['GK'], rating: 4 }),
+      player(2, { pos: ['CB'], rating: 4 }),
+      player(3, { pos: ['CB'], rating: 3 }),
+      player(4, { pos: ['RB'], rating: 4 }),
+      player(5, { pos: ['LB'], rating: 4 }),
+      player(6, { pos: ['CM'], rating: 4 }),
+      player(7, { pos: ['CM'], rating: 3 }),
+      player(8, { pos: ['CM'], rating: 2 }),
+      player(9, { pos: ['RW'], rating: 4 }),
+      player(10, { pos: ['ST'], rating: 4 }),
+      player(11, { pos: ['LW'], rating: 4 }),
+    ];
+    const depth = buildDepth(roster, FORMATIONS['4-3-3']);
+    expect(slotForPlayer(depth, 1)).toBe('GK');
+    expect(slotForPlayer(depth, 99)).toBeNull();
+  });
+});
+
+describe('effectiveStarterNums', () => {
+  it('collects all effective starter jersey numbers', () => {
+    const roster = [
+      player(1, { pos: ['GK'], rating: 4 }),
+      player(2, { pos: ['CB'], rating: 4 }),
+      player(3, { pos: ['CB'], rating: 3 }),
+      player(4, { pos: ['RB'], rating: 4 }),
+      player(5, { pos: ['LB'], rating: 4 }),
+      player(6, { pos: ['CM'], rating: 4 }),
+      player(7, { pos: ['CM'], rating: 3 }),
+      player(8, { pos: ['CM'], rating: 2 }),
+      player(9, { pos: ['RW'], rating: 4 }),
+      player(10, { pos: ['ST'], rating: 4 }),
+      player(11, { pos: ['LW'], rating: 4 }),
+    ];
+    const depth = buildDepth(roster, FORMATIONS['4-3-3']);
+    const nums = effectiveStarterNums(depth, new Set());
+    expect(nums.size).toBe(11);
+    expect(nums.has(1)).toBe(true);
+    expect(nums.has(10)).toBe(true);
   });
 });

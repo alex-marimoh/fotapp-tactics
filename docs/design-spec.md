@@ -103,13 +103,12 @@ Fixed three-region frame; the skin never changes it.
 
 ```
 ┌───────────────────────────────────────────────┐
-│ ribbon  (56px)  — wordmark · tagline           │
+│ ribbon — wordmark · squad status · compliance  │
 ├───────────────────────────┬───────────────────┤
 │ pitch half                │ info half          │
 │  control row (formation,  │  tabs: Team news / │
-│  compliance chips)        │  Roster            │
+│  inline legend)           │  Roster            │
 │  pitch (true 105:68)      │                    │
-│  legend (i)               │                    │
 ├───────────────────────────┴───────────────────┤
 │ depth drawer  (min 158px) — selected slot stack│
 └───────────────────────────────────────────────┘
@@ -124,10 +123,16 @@ Fixed three-region frame; the skin never changes it.
 ## Component rules
 
 - **Pitch node** — circle (`42`px portrait / `46`px wide), `bg` at 80% alpha, 2.5px border in the
-  slot's **health** color, jersey number inside. Below: a name pill (`bg` at 74%); when empty it
-  reads "`<pos>` gap" in `gap` red. Selected node scales up and rises in z.
-- **Compliance chip** — label + `n/limit`, border + number colored by state (ok=`solid`,
-  at=`thin`, over/under=`gap`).
+  slot's **health** color, jersey number inside. A **registration badge** (HG / EU / NE) sits at the
+  top-right of the circle — health border and reg badge are independent signals. Below: a name pill
+  (`bg` at 74%); when empty it reads "`<pos>` gap" in `gap` red. Selected node scales up; a
+  highlighted player (linked from roster or depth) gets an accent outer ring.
+- **Compliance counter** — lives in the top ribbon (not the pitch row). Label + explicit copy
+  (`7 of 8 used · 1 slot left` for caps; `10 registered · 3 required ✓` for minimums) + 4px progress
+  bar. Bar and secondary text colored by state (ok=`solid`, at=`thin`, over/under=`gap`). Paired with
+  a **squad status pill** (`Squad valid ✓` or first violation message).
+- **Inline legend** — always visible in the pitch control row on desktop; collapsible "Legend ▾"
+  chip on phone. Shows health swatches (Solid / Thin / Gap) and reg badge samples (HG / EU / NE).
 - **News card** — `soft` fill, `hair` border, `radius`. Category tag tinted from its own color at
   ~13% alpha. (Currently `PLACEHOLDER` content — flagged in-UI.)
 - **Depth card** — `cardFrom/To` gradient, border = health color for the starter / `hair2` for
@@ -148,7 +153,8 @@ No system jargon, no filler. Empty/placeholder states say what goes there next, 
 ## Quality floor
 
 - Responsive to the `1080px` breakpoint (portrait ↔ landscape pitch); usable narrower.
-- Color is never the only signal — health also carries a word ("Solid/Thin/Gap") and the legend.
+- Color is never the only signal — health also carries a word ("Solid/Thin/Gap") and the inline legend.
+- Pitch, roster, and depth are cross-linked: clicking any surface highlights the player in the others.
 - Visible keyboard focus and reduced-motion support are required for any new interactive element.
 
 ## Don'ts

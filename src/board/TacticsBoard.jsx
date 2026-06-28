@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   FORMATIONS, FORMATION_NAMES, buildDepth, healthOf, complianceOf, tierFor, HEALTH_LABEL,
+  effectiveStarterNum, effectiveStarterNums, squadComplianceStatus, slotForPlayer,
 } from '../squad-data';
 import {
   getTeam, DEFAULT_TEAM_SLUG, loadScenario, saveScenario, clearScenario, isAdminFor,
@@ -10,9 +11,11 @@ import { usePhone, useWide } from '../hooks/useViewport';
 import { withA } from '../lib/format';
 import { navigate } from '../navigation/appRoute';
 import { AddModal } from './AddModal';
+import { ComplianceCounter } from './ComplianceCounter';
 import { InfoPanel } from './InfoPanel';
 import { PitchPanel } from './PitchPanel';
 import { Pill } from './Pill';
+import { SquadStatusPill } from './SquadStatusPill';
 import { DEFAULT_SKIN, ThemeContext, hcOf, tierColorOf } from './theme';
 import {
   attackerSlot, clampInfoPanelWidth, INFO_PANEL_WIDTH_VAR,
@@ -55,6 +58,7 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
     () => saved?.depthMap ?? { [startFormation]: buildDepth(startRoster, FORMATIONS[startFormation]) },
   );
   const [selected, setSelected] = React.useState(() => attackerSlot(FORMATIONS[startFormation]));
+  const [highlightedNum, setHighlightedNum] = React.useState(/** @type {number|null} */ (null));
   const [leaving, setLeaving] = React.useState(() => new Set(saved?.leaving ?? []));
 
   const skipAutosaveRef = React.useRef(true);
@@ -140,7 +144,20 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
 
   const onToggleMenu = React.useCallback(() => setMenuOpen((o) => !o), []);
   const onCloseMenu = React.useCallback(() => setMenuOpen(false), []);
-  const onSelectSlot = React.useCallback((slotId) => setSelected(slotId), []);
+  const onSelectSlot = React.useCallback((slotId) => {
+    setSelected(slotId);
+    const d = depthMap[formation] || buildDepth(roster, FORMATIONS[formation]);
+    const num = effectiveStarterNum(d, slotId, leaving);
+    setHighlightedNum(num ?? null);
+  }, [depthMap, formation, leaving, roster]);
+
+  const onSelectPlayer = React.useCallback((num) => {
+    setHighlightedNum(num);
+    const slotId = slotForPlayer(depth, num);
+    if (slotId) setSelected(slotId);
+    setInfoView('roster');
+  }, [depth]);
+
   const onInfoViewChange = React.useCallback((view) => setInfoView(view), []);
 
   const editSlot = (slotId, updater) =>
@@ -188,6 +205,8 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
     () => complianceOf(roster, leaving, team.rules),
     [roster, leaving, team.rules],
   );
+  const squadStatus = React.useMemo(() => squadComplianceStatus(comp), [comp]);
+  const starterNums = React.useMemo(() => effectiveStarterNums(depth, leaving), [depth, leaving]);
   const selDepth = depth[selected];
   const selSlot = slots.find((s) => s.id === selected);
   const selHealth = selDepth ? healthOf(depth, selected, leaving) : null;
@@ -206,11 +225,11 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
       formationListId={formationListId}
       onChooseFormation={chooseFormation}
       team={team}
-      comp={comp}
       slots={slots}
       depth={depth}
       leaving={leaving}
       selected={selected}
+      highlightedNum={highlightedNum}
       allByNum={allByNum}
       onSelectSlot={onSelectSlot}
     />
@@ -222,6 +241,10 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
       infoView={infoView}
       onInfoViewChange={onInfoViewChange}
       roster={roster}
+      comp={comp}
+      starterNums={starterNums}
+      highlightedNum={highlightedNum}
+      onSelectPlayer={onSelectPlayer}
     />
   );
 
@@ -245,11 +268,23 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
                 const isStarter = i === 0;
                 const bIdx = i - 1;
                 return (
-                  <div key={`${o.num}-${i}`} style={{ position: 'relative', minWidth: 196, padding: 11, borderRadius: T.radius,
+                  <div key={`${o.num}-${i}`}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setHighlightedNum(o.num)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setHighlightedNum(o.num);
+                      }
+                    }}
+                    style={{ position: 'relative', minWidth: 196, padding: 11, borderRadius: T.radius,
                     background: gone ? withA(T.gap, 0.1) : (T.flat ? T.cardTo : `linear-gradient(160deg,${T.cardFrom},${T.cardTo})`),
                     border: `1.5px solid ${gone ? hc.gap : isStarter ? hc[selHealth] : T.hair2}`,
-                    opacity: gone ? 0.65 : 1 }}>
-                    <button onClick={() => removeAt(selected, i)} title="Remove from this position"
+                    opacity: gone ? 0.65 : 1,
+                    cursor: 'pointer',
+                    boxShadow: highlightedNum === o.num ? `0 0 0 2px ${T.accent}` : undefined }}>
+                    <button onClick={(e) => { e.stopPropagation(); removeAt(selected, i); }} title="Remove from this position"
                       style={{ position: 'absolute', top: 8, right: 8, width: 22, height: 22, borderRadius: '50%',
                         border: 'none', background: T.soft, color: T.text, cursor: 'pointer',
                         fontSize: 15, lineHeight: 1, display: 'grid', placeItems: 'center', opacity: 0.75 }}>×</button>
@@ -262,10 +297,10 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
                       <span>#{p.num}</span><span>Age {p.age}</span><span>★{p.rating}</span>
                     </div>
                     <div style={{ display: 'flex', gap: 6, marginTop: 12, flexWrap: 'wrap' }}>
-                      {!isStarter && <Pill onClick={() => makeStarter(selected, bIdx)} tone="accent">Make starter</Pill>}
-                      {!isStarter && bIdx > 0 && <Pill onClick={() => moveBackup(selected, bIdx, -1)} tone="ghost" title="Move up">↑</Pill>}
-                      {!isStarter && bIdx < selDepth.backups.length - 1 && <Pill onClick={() => moveBackup(selected, bIdx, 1)} tone="ghost" title="Move down">↓</Pill>}
-                      <Pill onClick={() => toggle(o.num)} tone={gone ? 'ghost' : 'danger'}>{gone ? 'Keep' : 'Sell'}</Pill>
+                      {!isStarter && <Pill onClick={(e) => { e.stopPropagation(); makeStarter(selected, bIdx); }} tone="accent">Make starter</Pill>}
+                      {!isStarter && bIdx > 0 && <Pill onClick={(e) => { e.stopPropagation(); moveBackup(selected, bIdx, -1); }} tone="ghost" title="Move up">↑</Pill>}
+                      {!isStarter && bIdx < selDepth.backups.length - 1 && <Pill onClick={(e) => { e.stopPropagation(); moveBackup(selected, bIdx, 1); }} tone="ghost" title="Move down">↓</Pill>}
+                      <Pill onClick={(e) => { e.stopPropagation(); toggle(o.num); }} tone={gone ? 'ghost' : 'danger'}>{gone ? 'Keep' : 'Sell'}</Pill>
                     </div>
                   </div>
                 );
@@ -296,13 +331,18 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
       display: 'flex', flexDirection: 'column', overflow: phone ? 'visible' : 'hidden' }}>
 
       <div style={{ minHeight: 56, display: 'flex', alignItems: 'center', gap: 12, rowGap: 8,
-        padding: phone ? '8px 14px' : '0 26px', flexWrap: phone ? 'wrap' : 'nowrap',
+        padding: phone ? '8px 14px' : '0 26px', flexWrap: 'wrap',
         background: T.flat ? T.ribbon[0] : `linear-gradient(90deg,${T.ribbon[0]},${T.ribbon[1]})`,
         borderBottom: `1px solid ${T.hair}`, flexShrink: 0, position: phone ? 'sticky' : 'static', top: 0, zIndex: 30 }}>
-        <span style={{ fontWeight: 850, fontSize: 19, letterSpacing: '-0.02em', fontFamily: T.display }}>
+        <span style={{ fontWeight: 850, fontSize: 19, letterSpacing: '-0.02em', fontFamily: T.display, flexShrink: 0 }}>
           <span style={{ color: T.accent }}>fot</span><span style={{ color: T.accent2 }}>app</span>
         </span>
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', flex: phone ? '1 1 100%' : '0 1 auto' }}>
+          <SquadStatusPill status={squadStatus} />
+          <ComplianceCounter label="Non-EU" c={comp.noneu} />
+          <ComplianceCounter label="Homegrown" c={comp.home} />
+        </div>
+        <div style={{ marginLeft: phone ? 0 : 'auto', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <AccountChip T={T} />
           <button onClick={() => { clearScenario(team.slug); window.location.reload(); }}
             title="Reset this board to the squad"
@@ -318,9 +358,8 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
           </button>
           )}
           <button onClick={() => navigate({ quiz: 'squad', team: team.slug })}
-            style={{ padding: '8px 16px', borderRadius: T.pill, border: 'none',
-              background: T.flat ? T.accent : `linear-gradient(90deg,${T.accent},${T.accentDark})`, color: T.onAccent,
-              fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+            style={{ padding: '7px 13px', borderRadius: T.pill, border: `1px solid ${T.hair2}`, background: T.soft,
+              color: T.text, fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
             Squad quiz →
           </button>
         </div>

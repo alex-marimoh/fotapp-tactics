@@ -1,11 +1,11 @@
 import React from 'react';
-import { FORMATION_NAMES, effectiveStarterNum, healthOf, HEALTH_LABEL } from '../squad-data';
+import { FORMATION_NAMES, effectiveStarterNum, healthOf, HEALTH_LABEL, REG_LABEL_FULL } from '../squad-data';
 import { withA } from '../lib/format';
 import { TeamPicker } from '../ui/TeamPicker';
 import { useDismissOnEscape } from '../ui/a11y';
-import { CompChip } from './CompChip';
 import { InfoLegend } from './InfoLegend';
 import { PitchSvg } from './PitchSvg';
+import { regBadgeStyle } from './regStyles';
 import { useT, hcOf } from './theme';
 
 export const PitchPanel = React.memo(function PitchPanel({
@@ -21,11 +21,11 @@ export const PitchPanel = React.memo(function PitchPanel({
   formationListId,
   onChooseFormation,
   team,
-  comp,
   slots,
   depth,
   leaving,
   selected,
+  highlightedNum,
   allByNum,
   onSelectSlot,
 }) {
@@ -89,9 +89,8 @@ export const PitchPanel = React.memo(function PitchPanel({
           )}
         </div>
         <TeamPicker T={T} team={team} param="team" onPitch />
-        <div style={{ flex: 1 }} />
-        <CompChip label="Non-EU" c={comp.noneu} />
-        <CompChip label="Homegrown" c={comp.home} />
+        <div style={{ flex: 1, minWidth: 0 }} />
+        <InfoLegend phone={phone} inline />
       </div>
 
       <div ref={pitchWrapRef} style={{ flex: phone ? 'none' : 1, height: phone ? '58vh' : undefined,
@@ -110,11 +109,13 @@ export const PitchPanel = React.memo(function PitchPanel({
             const pn = effectiveStarterNum(depth, slot.id, leaving);
             const p = pn && allByNum[pn];
             const isSel = selected === slot.id;
+            const isHighlighted = p && highlightedNum === p.num;
             const nx = wide ? 100 - slot.top : slot.left;
             const ny = wide ? slot.left : slot.top;
             const sz = wide ? 46 : 42;
+            const regBadge = p ? regBadgeStyle(T, p.reg) : null;
             const markerLabel = p
-              ? `${slot.label}, ${p.name}, ${HEALTH_LABEL[h]}`
+              ? `${slot.label}, ${p.name}, ${HEALTH_LABEL[h]}, ${REG_LABEL_FULL[p.reg]}`
               : `${slot.label}, ${slot.label} gap, ${HEALTH_LABEL[h]}`;
             return (
               <button key={slot.id} type="button" onClick={() => onSelectSlot(slot.id)}
@@ -123,11 +124,20 @@ export const PitchPanel = React.memo(function PitchPanel({
                   transform: `translate(-50%,-50%) scale(${isSel ? 1.08 : 1})`, transition: 'transform .15s',
                   cursor: 'pointer', textAlign: 'center', zIndex: isSel ? 6 : 3,
                   border: 'none', background: 'transparent', padding: 0, fontFamily: 'inherit', color: 'inherit' }}>
-                <div aria-hidden="true" style={{ width: sz, height: sz, borderRadius: '50%', margin: '0 auto',
-                  background: withA(T.bg, 0.8), border: `2.5px solid ${hc[h]}`,
-                  boxShadow: T.glow ? `0 0 14px ${hc[h]}66, 0 4px 10px rgba(0,0,0,.45)` : 'none',
-                  display: 'grid', placeItems: 'center' }}>
-                  <span style={{ fontWeight: 800, fontSize: wide ? 15 : 14 }}>{p ? p.num : '!'}</span>
+                <div aria-hidden="true" style={{ position: 'relative', width: sz, height: sz, margin: '0 auto' }}>
+                  <div style={{ width: sz, height: sz, borderRadius: '50%',
+                    background: withA(T.bg, 0.8), border: `2.5px solid ${hc[h]}`,
+                    boxShadow: [
+                      T.glow ? `0 0 14px ${hc[h]}66` : null,
+                      isHighlighted ? `0 0 0 2px ${T.accent}` : null,
+                      '0 4px 10px rgba(0,0,0,.45)',
+                    ].filter(Boolean).join(', '),
+                    display: 'grid', placeItems: 'center' }}>
+                    <span style={{ fontWeight: 800, fontSize: wide ? 15 : 14 }}>{p ? p.num : '!'}</span>
+                  </div>
+                  {regBadge && (
+                    <span style={regBadge.style}>{regBadge.label}</span>
+                  )}
                 </div>
                 <div aria-hidden="true" style={{ marginTop: 5, display: 'inline-block', padding: '2px 8px', borderRadius: T.pill,
                   background: withA(T.bg, 0.74), fontSize: wide ? 12 : 11, fontWeight: 700,
@@ -140,7 +150,6 @@ export const PitchPanel = React.memo(function PitchPanel({
 
         </div>
       </div>
-      <InfoLegend />
     </div>
   );
 });
