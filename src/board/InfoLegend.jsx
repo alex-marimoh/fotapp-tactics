@@ -1,6 +1,6 @@
 import React from 'react';
 import { useDismissOnEscape } from '../ui/a11y';
-import { regStylesOf } from './regStyles';
+import { regBadgeStyle } from './regStyles';
 import { useT, hcOf } from './theme';
 
 /**
@@ -10,7 +10,7 @@ import { useT, hcOf } from './theme';
 export function InfoLegend({ phone = false, inline = false }) {
   const T = useT();
   const hc = hcOf(T);
-  const regStyles = regStylesOf(T);
+  const noneuBadge = regBadgeStyle(T, 'noneu', { inline: true });
   const [open, setOpen] = React.useState(false);
   const btnRef = React.useRef(/** @type {HTMLButtonElement | null} */ (null));
   useDismissOnEscape(open && phone, () => setOpen(false), btnRef);
@@ -32,16 +32,10 @@ export function InfoLegend({ phone = false, inline = false }) {
         </span>
       ))}
       <span style={{ opacity: 0.35 }} aria-hidden="true">|</span>
-      {(['home', 'eu', 'noneu']).map((reg) => (
-        <span key={reg} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-          <span style={{ fontSize: 8, fontWeight: 800, padding: '1px 4px', borderRadius: T.pill,
-            background: regStyles[reg].bg, border: `1px solid ${regStyles[reg].border}`,
-            color: regStyles[reg].color }} aria-hidden="true">{regStyles[reg].label}</span>
-          <span style={{ color: T.text }}>
-            {reg === 'home' ? 'Homegrown' : reg === 'eu' ? 'EU' : 'Non-EU'}
-          </span>
-        </span>
-      ))}
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+        <span style={noneuBadge.style} aria-hidden="true">{noneuBadge.label}</span>
+        <span style={{ color: T.text }}>Non-EU</span>
+      </span>
     </div>
   );
 

@@ -10,6 +10,7 @@ import { getTeam, DEFAULT_TEAM_SLUG, saveQuizResult, listQuizResults } from '../
 import { navigate } from '../../navigation/appRoute';
 import { AccountChip } from '../../auth/AccountChip';
 import { decidedCount } from './quiz-shared-utils';
+import { withA } from '../../lib/format';
 import { primaryBtn, ghostBtn } from '../../ui/styles';
 
 // ---- shared bits ----------------------------------------------------------
@@ -54,6 +55,117 @@ function Intro({ T, total, onStart, last }) {
           Last time: <b style={{ opacity: 1 }}>{last.archetype}</b> · war chest {fmtM(last.warChest)} · {last.sellCount} sold
         </div>
       )}
+    </div>
+  );
+}
+
+// ===========================================================================
+// Setup — choose deck order before play
+// ===========================================================================
+function FormationIcon() {
+  const dot = (cx, cy, fill) => (
+    <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="3.2" fill={fill} />
+  );
+  return (
+    <svg viewBox="0 0 68 88" width="112" height="112" aria-hidden="true">
+      <rect x="3" y="3" width="62" height="82" rx="5" fill="#2f9249" stroke="rgba(255,255,255,.45)" strokeWidth="1.2" />
+      <line x1="3" y1="44" x2="65" y2="44" stroke="rgba(255,255,255,.28)" strokeWidth="1" />
+      <circle cx="34" cy="44" r="7" fill="none" stroke="rgba(255,255,255,.28)" strokeWidth="1" />
+      {dot(34, 78, '#fff')}
+      {dot(12, 64, '#fff')}
+      {dot(26, 64, '#fff')}
+      {dot(42, 64, '#fff')}
+      {dot(56, 64, '#fff')}
+      {dot(22, 48, '#1463ff')}
+      {dot(34, 48, '#1463ff')}
+      {dot(46, 48, '#1463ff')}
+      {dot(16, 22, '#ff5a1f')}
+      {dot(34, 18, '#ff5a1f')}
+      {dot(52, 22, '#ff5a1f')}
+    </svg>
+  );
+}
+
+function DiceIcon() {
+  const pip = (x, y) => <circle key={`${x}-${y}`} cx={x} cy={y} r="2.8" fill="#141a22" />;
+  const die = (x, y, rot, pips) => (
+    <g key={`${x}-${y}`} transform={`rotate(${rot} ${x + 18} ${y + 18})`}>
+      <rect x={x} y={y} width="36" height="36" rx="7" fill="#f4f6fa" stroke="rgba(20,26,34,.15)" strokeWidth="1.2" />
+      {pips.map(([px, py]) => pip(x + px, y + py))}
+    </g>
+  );
+  return (
+    <svg viewBox="0 0 88 88" width="112" height="112" aria-hidden="true">
+      {die(6, 22, -14, [[9, 9], [27, 27], [18, 18], [9, 27], [27, 9]])}
+      {die(38, 8, 12, [[9, 9], [27, 27], [18, 18]])}
+    </svg>
+  );
+}
+
+function OrderModeCard({ T, title, onClick, children }) {
+  const [hover, setHover] = React.useState(false);
+  return (
+    <button type="button" onClick={onClick} aria-label={title}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{ border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', fontFamily: 'inherit', color: 'inherit' }}>
+      <div style={{
+        width: 'min(240px, 42vw)', minWidth: 168,
+        position: 'relative', borderRadius: 14, overflow: 'hidden',
+        background: 'linear-gradient(165deg, #1c2433 0%, #0f141c 55%, #1a1028 100%)',
+        border: `2px solid ${withA(T.accent2, 0.5)}`,
+        boxShadow: hover
+          ? `0 32px 64px rgba(0,0,0,.5), 0 0 0 2px ${withA(T.accent, 0.35)}`
+          : `0 28px 56px rgba(0,0,0,.45), 0 0 0 1px ${withA(T.accent, 0.15)}`,
+        color: '#f4f6fa',
+        transform: hover ? 'translateY(-4px)' : undefined,
+        transition: 'transform .15s, box-shadow .15s',
+      }}>
+        <div style={{
+          position: 'absolute', top: -20, right: -30, width: 120, height: 120,
+          background: `linear-gradient(135deg, ${T.accent}, ${T.accent2})`,
+          transform: 'rotate(25deg)', opacity: 0.85,
+        }} />
+        <div style={{ position: 'relative', padding: '14px 16px 18px' }}>
+          <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.14em', color: T.textMutedOnDark }}>DECK MODE</span>
+          <div style={{
+            margin: '16px auto 12px', width: 120, height: 120, borderRadius: '50%',
+            background: `radial-gradient(circle at 30% 25%, ${withA(T.accent, 0.35)}, #0a0e14)`,
+            border: `3px solid ${T.accent2}`, display: 'grid', placeItems: 'center',
+          }}>
+            {children}
+          </div>
+          <h2 style={{
+            margin: 0, textAlign: 'center', fontFamily: T.display,
+            fontSize: 22, fontWeight: 800, letterSpacing: '-.02em',
+          }}>{title}</h2>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function OrderSetup({ T, onChoose, onBack }) {
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 18, padding: 24, textAlign: 'center' }}>
+      <span style={{ fontFamily: T.display, fontSize: 13, fontWeight: 700, letterSpacing: '.18em', textTransform: 'uppercase', color: T.accent }}>Before we start</span>
+      <h1 style={{ margin: 0, fontFamily: T.display, fontSize: 'clamp(32px,5vw,48px)', fontWeight: 800, letterSpacing: '-.02em', lineHeight: 1.1 }}>How should we deal the cards?</h1>
+      <p style={{ margin: 0, maxWidth: 460, fontSize: 15, lineHeight: 1.5, opacity: 0.7 }}>
+        Pick the order you&apos;ll see players in.
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: 14, justifyContent: 'center', marginTop: 4 }}>
+        <OrderModeCard T={T} title="Positional" onClick={() => onChoose('position')}>
+          <FormationIcon />
+        </OrderModeCard>
+        <OrderModeCard T={T} title="Random" onClick={() => onChoose('random')}>
+          <DiceIcon />
+        </OrderModeCard>
+      </div>
+      <button type="button" onClick={onBack}
+        style={{ marginTop: 4, border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit',
+          fontSize: 13, fontWeight: 700, color: T.textMuted, textDecoration: 'underline' }}>
+        ← Back
+      </button>
     </div>
   );
 }
@@ -163,14 +275,18 @@ function Result({ T, model, decisions, summary, onApply, onRestart }) {
 // ===========================================================================
 export function QuizFlow({ team = getTeam(DEFAULT_TEAM_SLUG) }) {
   const T = DEFAULT_SKIN;
-  const model = React.useMemo(() => createQuizModel(team), [team]);
-  const [phase, setPhase] = React.useState('intro'); // 'intro' | 'play' | 'result'
+  const [orderMode, setOrderMode] = React.useState(/** @type {'position'|'random'|null} */ (null));
+  const model = React.useMemo(
+    () => createQuizModel(team, orderMode ?? 'position'),
+    [team, orderMode],
+  );
+  const [phase, setPhase] = React.useState('intro'); // 'intro' | 'setup' | 'play' | 'result'
   const [decisions, setDecisions] = React.useState({});
   const [idx, setIdx] = React.useState(0);
   const decide = React.useCallback((num, patch) => setDecisions((d) => ({ ...d, [num]: { ...d[num], ...patch } })), []);
   const summary = React.useMemo(() => model.summaryOf(decisions), [model, decisions]);
 
-  const restart = () => { setDecisions({}); setIdx(0); setPhase('intro'); };
+  const restart = () => { setDecisions({}); setIdx(0); setOrderMode(null); setPhase('intro'); };
   const goBoard = () => navigate({ team: team.slug });
 
   const savedRef = React.useRef(false);
@@ -210,7 +326,14 @@ export function QuizFlow({ team = getTeam(DEFAULT_TEAM_SLUG) }) {
       </div>
 
       <div style={{ flex: 1, minHeight: 0 }}>
-        {phase === 'intro' && <Intro T={T} total={summary.total} last={lastResult} onStart={() => { setIdx(0); setPhase('play'); }} />}
+        {phase === 'intro' && <Intro T={T} total={summary.total} last={lastResult} onStart={() => setPhase('setup')} />}
+        {phase === 'setup' && (
+          <OrderSetup
+            T={T}
+            onBack={() => setPhase('intro')}
+            onChoose={(mode) => { setOrderMode(mode); setIdx(0); setPhase('play'); }}
+          />
+        )}
         {phase === 'play' && <Play T={T} model={model} decisions={decisions} decide={decide} idx={idx} setIdx={setIdx} summary={summary} onFinish={() => setPhase('result')} />}
         {phase === 'result' && <Result T={T} model={model} decisions={decisions} summary={summary} onApply={goBoard} onRestart={restart} />}
       </div>

@@ -1,4 +1,5 @@
 import { REG_LABEL_SHORT } from '../squad-data';
+import { withA } from '../lib/format';
 
 /**
  * Registration badge/pill colors from skin tokens.
@@ -17,11 +18,25 @@ export function regStylesOf(T) {
  * Inline styles for a compact registration badge.
  * @param {import('./theme').DEFAULT_SKIN} T
  * @param {'home'|'eu'|'noneu'} reg
- * @param {{ size?: number }} [opts]
+ * @param {{ size?: number, inline?: boolean }} [opts]
  */
 export function regBadgeStyle(T, reg, opts = {}) {
   const sz = opts.size ?? 14;
   const rs = regStylesOf(T)[reg];
+  const chip = {
+    borderRadius: T.pill,
+    background: withA(T.panel, 0.96),
+    border: `1.5px solid ${rs.border}`,
+    color: rs.color,
+    fontWeight: 800,
+    boxShadow: `0 1px 5px rgba(0,0,0,.35), 0 0 0 1px ${withA(T.bg, 0.2)}`,
+  };
+  if (opts.inline) {
+    return {
+      label: rs.label,
+      style: { ...chip, fontSize: 8, padding: '1px 4px' },
+    };
+  }
   return {
     label: rs.label,
     style: {
@@ -31,17 +46,12 @@ export function regBadgeStyle(T, reg, opts = {}) {
       minWidth: sz,
       height: sz,
       padding: '0 3px',
-      borderRadius: T.pill,
-      background: rs.bg,
-      border: `1px solid ${rs.border}`,
-      color: rs.color,
+      ...chip,
       fontSize: sz <= 14 ? 8 : 9,
-      fontWeight: 800,
       lineHeight: `${sz - 2}px`,
       textAlign: 'center',
       display: 'grid',
       placeItems: 'center',
-      boxShadow: '0 1px 4px rgba(0,0,0,.25)',
     },
   };
 }

@@ -113,7 +113,7 @@ export const PitchPanel = React.memo(function PitchPanel({
             const nx = wide ? 100 - slot.top : slot.left;
             const ny = wide ? slot.left : slot.top;
             const sz = wide ? 46 : 42;
-            const regBadge = p ? regBadgeStyle(T, p.reg) : null;
+            const regBadge = p?.reg === 'noneu' ? regBadgeStyle(T, p.reg) : null;
             const markerLabel = p
               ? `${slot.label}, ${p.name}, ${HEALTH_LABEL[h]}, ${REG_LABEL_FULL[p.reg]}`
               : `${slot.label}, ${slot.label} gap, ${HEALTH_LABEL[h]}`;

@@ -85,13 +85,31 @@ export function archetypeOf(summary) {
 }
 
 // Build the quiz model for one team: ordered roster, a depth lens, and bound helpers.
-export function createQuizModel(team) {
+/**
+ * Order quiz deck by primary position or shuffle.
+ * @param {object[]} roster
+ * @param {'position'|'random'} mode
+ */
+export function orderQuizRoster(roster, mode = 'position') {
+  if (mode === 'random') {
+    const copy = [...roster];
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy;
+  }
+  return [...roster].sort(
+    (a, b) => (ORDER[a.pos[0]] - ORDER[b.pos[0]]) || (b.rating - a.rating),
+  );
+}
+
+/** @param {import('../../data/store').Team} team @param {'position'|'random'} [orderMode] */
+export function createQuizModel(team, orderMode = 'position') {
   const roster = team.roster;
   const slots = SLOTS;
   const depth = buildDepth(roster, slots);
-  const ordered = [...roster].sort(
-    (a, b) => (ORDER[a.pos[0]] - ORDER[b.pos[0]]) || (b.rating - a.rating),
-  );
+  const ordered = orderQuizRoster(roster, orderMode);
   const byNum = Object.fromEntries(ordered.map((p) => [p.num, p]));
 
   const starterSlotOf = (num) =>

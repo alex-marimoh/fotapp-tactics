@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   FORMATIONS, FORMATION_NAMES, buildDepth, healthOf, complianceOf, tierFor, HEALTH_LABEL,
-  effectiveStarterNum, effectiveStarterNums, squadComplianceStatus, slotForPlayer,
+  effectiveStarterNum, effectiveStarterNums, slotForPlayer,
 } from '../squad-data';
 import {
   getTeam, DEFAULT_TEAM_SLUG, loadScenario, saveScenario, clearScenario, isAdminFor,
@@ -11,11 +11,9 @@ import { usePhone, useWide } from '../hooks/useViewport';
 import { withA } from '../lib/format';
 import { navigate } from '../navigation/appRoute';
 import { AddModal } from './AddModal';
-import { ComplianceCounter } from './ComplianceCounter';
 import { InfoPanel } from './InfoPanel';
 import { PitchPanel } from './PitchPanel';
 import { Pill } from './Pill';
-import { SquadStatusPill } from './SquadStatusPill';
 import { DEFAULT_SKIN, ThemeContext, hcOf, tierColorOf } from './theme';
 import {
   attackerSlot, clampInfoPanelWidth, INFO_PANEL_WIDTH_VAR,
@@ -205,7 +203,6 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
     () => complianceOf(roster, leaving, team.rules),
     [roster, leaving, team.rules],
   );
-  const squadStatus = React.useMemo(() => squadComplianceStatus(comp), [comp]);
   const starterNums = React.useMemo(() => effectiveStarterNums(depth, leaving), [depth, leaving]);
   const selDepth = depth[selected];
   const selSlot = slots.find((s) => s.id === selected);
@@ -337,12 +334,7 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
         <span style={{ fontWeight: 850, fontSize: 19, letterSpacing: '-0.02em', fontFamily: T.display, flexShrink: 0 }}>
           <span style={{ color: T.accent }}>fot</span><span style={{ color: T.accent2 }}>app</span>
         </span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', flex: phone ? '1 1 100%' : '0 1 auto' }}>
-          <SquadStatusPill status={squadStatus} />
-          <ComplianceCounter label="Non-EU" c={comp.noneu} />
-          <ComplianceCounter label="Homegrown" c={comp.home} />
-        </div>
-        <div style={{ marginLeft: phone ? 0 : 'auto', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <AccountChip T={T} />
           <button onClick={() => { clearScenario(team.slug); window.location.reload(); }}
             title="Reset this board to the squad"
