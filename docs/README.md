@@ -31,6 +31,11 @@ and watch each position's **depth health** (Solid / Thin / Gap) and **registrati
 | [0014](adr/0014-anonymous-account-lifecycle.md) | Anonymous accounts: accept growth for now |
 | [0015](adr/0015-client-navigation-without-reload.md) | Navigation: tiny URL router, no react-router |
 | [0016](adr/0016-production-db-schema-v1.md) | Production DB + voting engine v1 direction (#2 sign-off) |
+| [0017](adr/0017-performance-baseline-and-budgets.md) | Performance baseline & budgets (#38) |
+
+## Performance
+
+[perf-budgets.md](perf-budgets.md) — board-route JS budget (CI-enforced), interaction targets, and manual Profiler/Lighthouse procedures.
 
 ## Design
 

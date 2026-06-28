@@ -8,6 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "test": "vitest run",
+    "check:budget": "node scripts/check-bundle-budget.mjs",
     "preview": "vite preview",
     "seed:supabase": "vite-node scripts/seed-supabase.mjs"
   },
