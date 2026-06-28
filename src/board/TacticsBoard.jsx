@@ -1,7 +1,6 @@
 import React from 'react';
 import {
-  FORMATIONS, FORMATION_NAMES, PLACEHOLDER_NEWS,
-  buildDepth, healthOf, effectiveStarterNum, complianceOf, tierFor, HEALTH_LABEL,
+  FORMATIONS, FORMATION_NAMES, buildDepth, healthOf, complianceOf, tierFor, HEALTH_LABEL,
 } from '../squad-data';
 import {
   getTeam, DEFAULT_TEAM_SLUG, loadScenario, saveScenario, clearScenario, isAdminFor,
@@ -10,14 +9,10 @@ import { AccountChip } from '../auth/AccountChip';
 import { usePhone, useWide } from '../hooks/useViewport';
 import { withA } from '../lib/format';
 import { navigate } from '../navigation/appRoute';
-import { TeamPicker } from '../ui/TeamPicker';
-import { useDismissOnEscape } from '../ui/a11y';
 import { AddModal } from './AddModal';
-import { CompChip } from './CompChip';
-import { InfoLegend } from './InfoLegend';
+import { InfoPanel } from './InfoPanel';
+import { PitchPanel } from './PitchPanel';
 import { Pill } from './Pill';
-import { PitchSvg } from './PitchSvg';
-import { RosterTable } from './RosterTable';
 import { DEFAULT_SKIN, ThemeContext, hcOf, tierColorOf } from './theme';
 import {
   attackerSlot, clampInfoPanelWidth, INFO_PANEL_WIDTH_VAR,
@@ -76,7 +71,6 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
   }, [team.slug, formation, depthMap, leaving, roster]);
 
   const [menuOpen, setMenuOpen] = React.useState(false);
-  useDismissOnEscape(menuOpen, () => setMenuOpen(false), formationTriggerRef);
   const [adding, setAdding] = React.useState(null);
   const [addTab, setAddTab] = React.useState('roster');
   const [form, setForm] = React.useState({ name: '', type: 'CB', reg: 'eu', age: '21', rating: '3' });
@@ -137,12 +131,17 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
     return next;
   });
 
-  const chooseFormation = (name) => {
+  const chooseFormation = React.useCallback((name) => {
     setMenuOpen(false);
     setDepthMap((m) => (m[name] ? m : { ...m, [name]: buildDepth(roster, FORMATIONS[name]) }));
     setFormation(name);
     setSelected(attackerSlot(FORMATIONS[name]));
-  };
+  }, [roster]);
+
+  const onToggleMenu = React.useCallback(() => setMenuOpen((o) => !o), []);
+  const onCloseMenu = React.useCallback(() => setMenuOpen(false), []);
+  const onSelectSlot = React.useCallback((slotId) => setSelected(slotId), []);
+  const onInfoViewChange = React.useCallback((view) => setInfoView(view), []);
 
   const editSlot = (slotId, updater) =>
     setDepthMap((m) => ({ ...m, [formation]: { ...m[formation], [slotId]: updater(m[formation][slotId]) } }));
@@ -185,159 +184,45 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
     setAdding(null);
   };
 
-  const comp = complianceOf(roster, leaving, team.rules);
+  const comp = React.useMemo(
+    () => complianceOf(roster, leaving, team.rules),
+    [roster, leaving, team.rules],
+  );
   const selDepth = depth[selected];
   const selSlot = slots.find((s) => s.id === selected);
+  const selHealth = selDepth ? healthOf(depth, selected, leaving) : null;
 
-  const pitchHalf = (
-        <div style={{ position: 'relative', display: 'flex', flexDirection: 'column',
-          padding: phone ? 12 : 16, gap: 12, minHeight: 0, minWidth: 0,
-          background: T.flat ? T.pitch[1] : `radial-gradient(120% 90% at 50% 0%, ${T.pitch[0]} 0%, ${T.pitch[1]} 55%, ${T.pitch[2]} 100%)` }}>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, flexWrap: 'wrap' }}>
-            <div style={{ position: 'relative' }}>
-              <button
-                ref={formationTriggerRef}
-                type="button"
-                aria-haspopup="listbox"
-                aria-expanded={menuOpen}
-                aria-controls={menuOpen ? formationListId : undefined}
-                onClick={() => setMenuOpen((o) => !o)}
-                style={{ padding: '8px 16px', borderRadius: T.pill, border: 'none',
-                  background: T.flat ? T.accent : `linear-gradient(90deg,${T.accent},${T.accentDark})`, color: T.onAccent, fontWeight: 800,
-                  fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
-              >
-                {formation} <span aria-hidden="true">▾</span>
-              </button>
-              {menuOpen && (
-                <>
-                  <div
-                    role="presentation"
-                    onClick={() => setMenuOpen(false)}
-                    style={{ position: 'fixed', inset: 0, zIndex: 40 }}
-                  />
-                  <div
-                    id={formationListId}
-                    role="listbox"
-                    aria-label="Choose formation"
-                    style={{ position: 'absolute', top: '100%', left: 0, marginTop: 6, zIndex: 50,
-                      background: T.surface, border: `1px solid ${T.hair2}`, borderRadius: T.radius,
-                      padding: 4, minWidth: 150, boxShadow: '0 12px 32px rgba(0,0,0,.5)',
-                      maxHeight: 320, overflowY: 'auto' }}
-                  >
-                    {FORMATION_NAMES.map((name) => (
-                      <button
-                        key={name}
-                        type="button"
-                        role="option"
-                        aria-selected={name === formation}
-                        onClick={() => chooseFormation(name)}
-                        style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer',
-                          background: name === formation ? withA(T.accent, 0.18) : 'transparent',
-                          color: T.text, padding: '9px 12px', borderRadius: Math.max(0, T.radius - 5), fontSize: 13,
-                          fontWeight: name === formation ? 800 : 500, fontFamily: 'inherit' }}
-                      >
-                        {name}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-            <TeamPicker T={T} team={team} param="team" onPitch />
-            <div style={{ flex: 1 }} />
-            <CompChip label="Non-EU" c={comp.noneu} />
-            <CompChip label="Homegrown" c={comp.home} />
-          </div>
-
-          <div ref={pitchWrapRef} style={{ flex: phone ? 'none' : 1, height: phone ? '58vh' : undefined,
-            minHeight: 0, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ position: 'relative', width: pitchBox.w || '100%', height: pitchBox.h || '100%' }}>
-            {Array.from({ length: 9 }).map((_, i) => (
-              <div key={i} aria-hidden="true" style={{ position: 'absolute', background: i % 2 ? T.soft : 'transparent',
-                ...(wide
-                  ? { top: 0, bottom: 0, left: `${(i / 9) * 100}%`, width: `${100 / 9}%` }
-                  : { left: 0, right: 0, top: `${(i / 9) * 100}%`, height: `${100 / 9}%` }) }} />
-            ))}
-            <div style={{ position: 'absolute', inset: 0 }} aria-hidden="true"><PitchSvg horizontal={wide} /></div>
-
-            {slots.map((slot) => {
-              const h = healthOf(depth, slot.id, leaving);
-              const pn = effectiveStarterNum(depth, slot.id, leaving);
-              const p = pn && allByNum[pn];
-              const isSel = selected === slot.id;
-              const nx = wide ? 100 - slot.top : slot.left;
-              const ny = wide ? slot.left : slot.top;
-              const sz = wide ? 46 : 42;
-              const markerLabel = p
-                ? `${slot.label}, ${p.name}, ${HEALTH_LABEL[h]}`
-                : `${slot.label}, ${slot.label} gap, ${HEALTH_LABEL[h]}`;
-              return (
-                <button key={slot.id} type="button" onClick={() => setSelected(slot.id)}
-                  aria-label={markerLabel} aria-current={isSel ? 'true' : undefined}
-                  style={{ position: 'absolute', left: `${nx}%`, top: `${ny}%`,
-                    transform: `translate(-50%,-50%) scale(${isSel ? 1.08 : 1})`, transition: 'transform .15s',
-                    cursor: 'pointer', textAlign: 'center', zIndex: isSel ? 6 : 3,
-                    border: 'none', background: 'transparent', padding: 0, fontFamily: 'inherit', color: 'inherit' }}>
-                  <div aria-hidden="true" style={{ width: sz, height: sz, borderRadius: '50%', margin: '0 auto',
-                    background: withA(T.bg, 0.8), border: `2.5px solid ${hc[h]}`,
-                    boxShadow: T.glow ? `0 0 14px ${hc[h]}66, 0 4px 10px rgba(0,0,0,.45)` : 'none',
-                    display: 'grid', placeItems: 'center' }}>
-                    <span style={{ fontWeight: 800, fontSize: wide ? 15 : 14 }}>{p ? p.num : '!'}</span>
-                  </div>
-                  <div aria-hidden="true" style={{ marginTop: 5, display: 'inline-block', padding: '2px 8px', borderRadius: T.pill,
-                    background: withA(T.bg, 0.74), fontSize: wide ? 12 : 11, fontWeight: 700,
-                    color: p ? T.text : hc.gap, whiteSpace: 'nowrap' }}>
-                    {p ? p.name : `${slot.label} gap`}
-                  </div>
-                </button>
-              );
-            })}
-
-          </div>
-          </div>
-          <InfoLegend />
-        </div>
+  const pitchPanel = (
+    <PitchPanel
+      phone={phone}
+      wide={wide}
+      pitchBox={pitchBox}
+      pitchWrapRef={pitchWrapRef}
+      formation={formation}
+      menuOpen={menuOpen}
+      onToggleMenu={onToggleMenu}
+      onCloseMenu={onCloseMenu}
+      formationTriggerRef={formationTriggerRef}
+      formationListId={formationListId}
+      onChooseFormation={chooseFormation}
+      team={team}
+      comp={comp}
+      slots={slots}
+      depth={depth}
+      leaving={leaving}
+      selected={selected}
+      allByNum={allByNum}
+      onSelectSlot={onSelectSlot}
+    />
   );
 
-  const infoHalf = (
-        <div style={{ background: T.panel, padding: phone ? '14px 14px' : '16px 20px', overflowY: 'auto',
-          display: 'flex', flexDirection: 'column', gap: 12, minHeight: 0, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-            {[['news', 'Team news'], ['roster', 'Roster']].map(([k, l]) => (
-              <button key={k} onClick={() => setInfoView(k)}
-                style={{ padding: '6px 13px', borderRadius: T.pill, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                  fontSize: 12, fontWeight: 800, background: infoView === k ? T.accent : T.soft,
-                  color: infoView === k ? T.onAccent : T.text }}>{l}</button>
-            ))}
-            {infoView === 'news'
-              ? <span style={{ fontSize: 10, fontWeight: 700, color: T.accent2, marginLeft: 6,
-                  border: `1px solid ${T.accent2}`, borderRadius: T.pill, padding: '1px 7px' }}>PLACEHOLDER</span>
-              : <span style={{ marginLeft: 'auto', fontSize: 11, color: T.textMuted }}>{roster.length} players</span>}
-          </div>
-
-          {infoView === 'news' ? (
-            <>
-              {PLACEHOLDER_NEWS.map((n, i) => (
-                <div key={i} style={{ background: T.soft, border: `1px solid ${T.hair}`,
-                  borderRadius: T.radius, padding: '12px 14px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
-                    <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: '0.06em', padding: '2px 7px',
-                      borderRadius: T.pill, background: `${n.c}22`, color: n.c }}>{n.tag}</span>
-                    <span style={{ fontSize: 10, color: T.textMuted, marginLeft: 'auto' }}>{n.when}</span>
-                  </div>
-                  <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.3 }}>{n.head}</div>
-                  <div style={{ fontSize: 12, opacity: 0.6, marginTop: 3, lineHeight: 1.4 }}>{n.body}</div>
-                </div>
-              ))}
-              <div style={{ marginTop: 'auto', fontSize: 11, color: T.textMuted, lineHeight: 1.5 }}>
-                Placeholder panel — swap for news feed, rumors, fixtures, or finances later.
-              </div>
-            </>
-          ) : (
-            <RosterTable roster={roster} />
-          )}
-        </div>
+  const infoPanel = (
+    <InfoPanel
+      phone={phone}
+      infoView={infoView}
+      onInfoViewChange={onInfoViewChange}
+      roster={roster}
+    />
   );
 
   const depthDrawer = (
@@ -347,8 +232,8 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
           <div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
               <span style={{ fontSize: 15, fontWeight: 800, fontFamily: T.display }}>{selSlot ? selSlot.label : ''}</span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: hc[healthOf(depth, selected, leaving)] }}>
-                {HEALTH_LABEL[healthOf(depth, selected, leaving)]}
+              <span style={{ fontSize: 12, fontWeight: 700, color: hc[selHealth] }}>
+                {HEALTH_LABEL[selHealth]}
               </span>
               <span style={{ fontSize: 12, color: T.textMuted }}>· reorder, sell, or add depth</span>
             </div>
@@ -362,7 +247,7 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
                 return (
                   <div key={`${o.num}-${i}`} style={{ position: 'relative', minWidth: 196, padding: 11, borderRadius: T.radius,
                     background: gone ? withA(T.gap, 0.1) : (T.flat ? T.cardTo : `linear-gradient(160deg,${T.cardFrom},${T.cardTo})`),
-                    border: `1.5px solid ${gone ? hc.gap : isStarter ? hc[healthOf(depth, selected, leaving)] : T.hair2}`,
+                    border: `1.5px solid ${gone ? hc.gap : isStarter ? hc[selHealth] : T.hair2}`,
                     opacity: gone ? 0.65 : 1 }}>
                     <button onClick={() => removeAt(selected, i)} title="Remove from this position"
                       style={{ position: 'absolute', top: 8, right: 8, width: 22, height: 22, borderRadius: '50%',
@@ -443,23 +328,23 @@ export function TacticsBoard({ skin = DEFAULT_SKIN, team = getTeam(DEFAULT_TEAM_
 
       {phone ? (
         <div style={{ display: 'flex', flexDirection: 'column', background: T.hair, gap: 1 }}>
-          {pitchHalf}
+          {pitchPanel}
           {depthDrawer}
-          {infoHalf}
+          {infoPanel}
         </div>
       ) : (
         <>
           <div ref={gridRef} style={{ flex: 1, minHeight: 0, display: 'grid',
             gridTemplateColumns: `minmax(360px, 1fr) 6px var(${INFO_PANEL_WIDTH_VAR}, 460px)`,
             gap: 1, background: T.hair }}>
-            {pitchHalf}
+            {pitchPanel}
             <div onPointerDown={startInfoResize} role="separator" aria-orientation="vertical"
               aria-label="Resize panel" title="Drag to resize"
               style={{ cursor: 'col-resize', background: T.soft, display: 'flex',
                 alignItems: 'center', justifyContent: 'center', touchAction: 'none' }}>
               <div style={{ width: 2, height: 28, borderRadius: 2, background: T.hair2 }} />
             </div>
-            {infoHalf}
+            {infoPanel}
           </div>
           {depthDrawer}
         </>
