@@ -222,21 +222,24 @@ export function upsertPlayer(slug, player, originalNum = player.num) {
 
 async function persistUpsertPlayer(slug, player, originalNum) {
   const supabase = getSupabase();
-  const existing = (await supabase.from('players').select('id').eq('team_slug', slug).eq('num', originalNum).maybeSingle()).data;
-  const row = playerToRow(slug, { ...player, id: existing?.id ?? player.id });
-  if (existing?.id) {
-    const { error } = await supabase.from('players').update(row).eq('id', existing.id);
-    if (error) throw error;
-    if (player.num !== originalNum) {
-      const updated = rosters[slug].find((p) => p.num === player.num);
-      if (updated) updated.id = existing.id;
-    }
-  } else {
-    const { data, error } = await supabase.from('players').insert(row).select('id').single();
-    if (error) throw error;
-    const cached = rosters[slug].find((p) => p.num === player.num);
-    if (cached) cached.id = data.id;
+  const renumbered = player.num !== originalNum;
+  const row = playerToRow(slug, player);
+  if (renumbered) delete row.id;
+
+  const { data, error } = await supabase
+    .from('players')
+    .upsert(row, { onConflict: 'team_slug,num' })
+    .select('id')
+    .single();
+  if (error) throw error;
+
+  if (renumbered) {
+    const { error: deleteError } = await supabase.from('players').delete().eq('team_slug', slug).eq('num', originalNum);
+    if (deleteError) throw deleteError;
   }
+
+  const cached = rosters[slug].find((p) => p.num === player.num);
+  if (cached) cached.id = data.id;
 }
 
 export function deletePlayer(slug, num) {
